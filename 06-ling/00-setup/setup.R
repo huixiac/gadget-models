@@ -1,4 +1,6 @@
 library(mfdb)
+library(tidyverse)
+library(Rgadget)
 ## Create a gadget directory, define some defaults to use with our queries below
 gd <- gadget_directory("06-ling/01-ling")
 mdb<-mfdb('Iceland')

@@ -1,23 +1,70 @@
-library(Rgadget)
+## Useful constansts
+
+## weight length relationship
+lw.constants <- 
+  mfdb_dplyr_sample(mdb) %>% 
+  filter(species == 'LIN',
+         sampling_type == 'IGFS',
+         !is.na(weight)) %>% 
+  select(length,weight) %>% 
+  collect(n=Inf) %>% 
+  lm(log(weight)~log(length),.) %>% 
+  broom::tidy() %>% 
+  select(estimate)
 
 
-gadgetstock('lingimm',gd$dir,missingOkay = TRUE) %>%
+## initial conditions sigma
+init.sigma <- 
+  mfdb_dplyr_sample(mdb) %>% 
+  dplyr::filter(species == 'LIN',age >0,!is.na(length))  %>% 
+  dplyr::select(age,length) %>% 
+  dplyr::collect(n=Inf) %>% 
+  dplyr::group_by(age) %>% 
+  dplyr::summarise(ml=mean(length,na.rm=TRUE),ms=sd(length,na.rm=TRUE))
+
+
+## convenience functions
+von_b_formula <- function(a,linf='Linf',k='k',recl='recl'){
+  a %>% 
+    map(~infuser::infuse("{{linf}} * (1 - exp(-1 * (0.001 * {{k}}) * ({{a}} - (1 + log(1 - {{recl}}/{{linf}})/(0.001 * k)))))",
+                         a=.,linf=linf,k=k,recl=recl)) %>% 
+    map(~parse(text=.) %>% 
+          map(to.gadget.formulae)) %>% 
+    unlist()
+}
+
+## setup the immature stock first
+ling.imm <- 
+  gadgetstock('lingimm',gd$dir,missingOkay = TRUE) %>%
   gadget_update('stock',
                 minage = 3,
                 maxage = 10,
                 minlength = 20,
                 maxlength = 160,
                 dl = 4) %>%
+  gadget_update('initialconditions',
+                normalparam = data_frame(age = 3:10,
+                                         area = 1,
+                                         age.factor = 1,
+                                         area.factor = 1,
+                                         number = parse(text=sprintf('lingimm.init.scalar*lingimm.init.%s',age)) %>% 
+                                           map(to.gadget.formulae) %>% 
+                                           unlist(),
+                                         mean = von_b_formula(age,linf='ling.linf',k='ling.k',recl='ling.recl'),
+                                         stddev = init.sigma$ms[age],
+                                         alpha = '#ling.walpha',
+                                         beta = '#ling.wbeta')) %>% 
   ## does"something" updates should also allow for other names, e.g. doesrenew -> recruitment etc..
   gadget_update('doesgrow',  
                 growthfunction = 'lengthvbsimple',
-                growthparameters = c(linf='#ling.Linf',k='( * 0.001 #ling.k)', '#ling.walpha','#ling.wbeta'),
+                growthparameters = c(linf='#ling.linf',k='( * 0.001 #ling.k)', '#ling.walpha','#ling.wbeta'),
                 beta='(* 10 #ling.bbin)', 
                 maxlengthgroupgrowth=15) %>%
   gadget_update('naturalmortality',   
                 rep('#ling.M',8)) %>%
   gadget_update('refweight',
-                data=data_frame(length=seq(4,130,2),mean=6.5e-6*length^3.07)) %>% 
+                data=data_frame(length=seq(20,160,4),
+                                mean=lw.constants$estimate[1]*length^lw.constants$estimate[2])) %>% 
   gadget_update('iseaten',1) %>% 
   gadget_update('doesmature', 
                 maturityfunction = 'continuous',
@@ -27,44 +74,64 @@ gadgetstock('lingimm',gd$dir,missingOkay = TRUE) %>%
                 transitionstockandratios = 'lingmat 1',
                 transitionstep = 4) %>% 
   gadget_update('doesrenew',
-                normalparam = )
+                normalparam = data_frame(year = year_range,
+                                         step = 1,
+                                         area = 1,
+                                         age = 3,
+                                         number = parse(text=sprintf('ling.rec.scalar*ling.rec.%s',year)) %>% 
+                                           map(to.gadget.formulae) %>% 
+                                           unlist(),
+                                         mean = von_b_formula(age,linf='ling.linf',k='ling.k',recl='ling.recl'),
+                                         stddev = '#ling.rec.sd',
+                                         alpha = '#ling.walpha',
+                                         beta = '#ling.wbeta')) 
 
 
 
 
-## find sane starting values for recl and stddev
-mla <- mfdb_sample_meanlength_stddev(mdb,c('age'),
-                                     c(list(sampling_type='IGFS',age=1:20),
-                                       defaults))
+ling.mat <-
+  gadgetstock('lingmat',gd$dir,missingOkay = TRUE) %>%
+  gadget_update('stock',
+                minage = 5,
+                maxage = 15,
+                minlength = 20,
+                maxlength = 160,
+                dl = 4) %>%
+  gadget_update('initialconditions',
+                normalparam = data_frame(age = 5:1510,
+                                         area = 1,
+                                         age.factor = 1,
+                                         area.factor = 1,
+                                         number = parse(text=sprintf('lingmat.init.scalar*lingmat.init.%s',age)) %>% 
+                                           map(to.gadget.formulae) %>% 
+                                           unlist(),
+                                         mean = von_b_formula(age,linf='ling.linf',k='ling.k',recl='ling.recl'),
+                                         stddev = init.sigma$ms[age],
+                                         alpha = '#ling.walpha',
+                                         beta = '#ling.wbeta')) %>% 
+  ## does"something" updates should also allow for other names, e.g. doesrenew -> recruitment etc..
+  gadget_update('doesgrow',  
+                growthfunction = 'lengthvbsimple',
+                growthparameters = c(linf='#ling.linf',k='( * 0.001 #ling.k)', '#ling.walpha','#ling.wbeta'),
+                beta='(* 10 #ling.bbin)', 
+                maxlengthgroupgrowth=15) %>%
+  gadget_update('naturalmortality',   
+                rep('#ling.M',11)) %>%
+  gadget_update('refweight',
+                data=data_frame(length=seq(20,160,4),
+                                mean=lw.constants$estimate[1]*length^lw.constants$estimate[2])) %>% 
+  gadget_update('iseaten',1) 
 
-init.sigma <- 
-  mla[[1]] %>% 
-  dplyr::group_by(age) %>%
-  dplyr::summarise(ml=mean(mean), ms = mean(stddev,na.rm=TRUE))
+
+## write to file
+ling.imm %>% 
+  write.gadget.file(gd$dir)
+
+ling.mat %>% 
+  write.gadget.file(gd$dir)
 
 
-lw <- mfdb_sample_meanweight(mdb,c('length'),
-                             c(list(sampling_type='IGFS', species = 'LIN',
-                                    length=mfdb_interval("", seq(0, 180, by = 1)))))
 
-lw.tmp <- 
-  lw[[1]] %>%
-  dplyr::mutate(length=as.numeric(as.character(length)), 
-                weight=mean/1e3) %>% 
-  dplyr::filter(length<120) %>% 
-  nls(weight ~ a*length^b,.,start=list(a=1e-5,b=3)) %>%
-  coefficients()
-if(FALSE){
-  library(fjolst)
-    tmp <- stodvar %>% filter(synaflokkur == 30)
-    had <- all.kv %>% filter(synis.id %in% tmp$synis.id, tegund == 6)
-    lw <- had %>% group_by(ar,aldur) %>%
-        summarise(ml = mean(lengd,na.rm=TRUE),
-                  sl = sd(lengd,na.rm=TRUE))
-    lw.m <- lw %>% filter(age<12) %>% group_by(aldur) %>%
-        summarise(sl = mean(sl,na.rm=TRUE))
-    
-}
 
 ## lets find proportion mature @age
 matatage <- mfdb_sample_count(mdb, c('maturity_stage','age'),
