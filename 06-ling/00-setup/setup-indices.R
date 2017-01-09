@@ -2,8 +2,10 @@
 
 igfs.SI1 <- mfdb_sample_count(mdb, c('length'), c(list(
     sampling_type = 'IGFS',
-    length = mfdb_interval("len", c(20,50))),
+    length = mfdb_interval("len", c(0,50))),
     defaults))
+attr(attributes(igfs.SI1[[1]])$length$len0,'min') <- minlength
+
 
 igfs.SI2 <- mfdb_sample_count(mdb, c('length'), c(list(
     sampling_type = 'IGFS',
@@ -12,7 +14,7 @@ igfs.SI2 <- mfdb_sample_count(mdb, c('length'), c(list(
 
 igfs.SI3 <- mfdb_sample_count(mdb, c( 'length'), c(list(
     sampling_type = 'IGFS',
-    length = mfdb_interval("len", c(70,80,90,100,180))),
+    length = mfdb_interval("len", c(70,80,90,100,160),open_ended = TRUE)),
     defaults))
 
 

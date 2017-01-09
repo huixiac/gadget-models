@@ -19,35 +19,41 @@ defaults <- list(
     year = year_range,
     species = 'LIN')
 
+gadgetfile('Modelfiles/time',
+           file_type = 'time',
+           components = list(list(firstyear = 1982,
+                                  firststep=1,
+                                  lastyear=2016,
+                                  laststep=4,
+                                  notimesteps=c(4,3,3,3,3)))) %>% 
+  write.gadget.file(gd$dir)
 
 ## Write out areafile and update mainfile with areafile location
-gadget_dir_write(gd, gadget_areafile(
-    size = mfdb_area_size(mdb, defaults)[[1]],
-    temperature = mfdb_temperature(mdb, defaults)[[1]]))
+gadget_areafile(
+  size = mfdb_area_size(mdb, defaults)[[1]],
+  temperature = mfdb_temperature(mdb, defaults)[[1]]) %>% 
+gadget_dir_write(gd,.)
 ## Write a penalty component to the likelihood file
-gadget_dir_write(gd, gadget_likelihood_component("penalty",
-                                                 name = "bounds",
-                                                 weight = "0.5",
-                                                 data = data.frame(
-                                                     switch = c("default"),
-                                                     power = c(2),
-                                                     upperW=10000,
-                                                     lowerW=10000,
-                                                     stringsAsFactors = FALSE)))
 
-gadget_dir_write(gd, gadget_likelihood_component("understocking",
-                                                 name = "understocking",
-                                                 weight = "100"
-                                                 ))
+gadget_likelihood_component("penalty",
+                            name = "bounds",
+                            weight = "0.5",
+                            data = data.frame(
+                              switch = c("default"),
+                              power = c(2),
+                              upperW=10000,
+                              lowerW=10000,
+                              stringsAsFactors = FALSE)) %>% 
+gadget_dir_write(gd,.)
+gadget_likelihood_component("understocking",
+                            name = "understocking",
+                            weight = "100") %>% 
+gadget_dir_write(gd,.)
 
-
-
-
-source('setup-fleets.R')
-source('setup-model.R')
-source('setup-catchdistribution.R')
-source('setup-indices.R')
-#source('setup-catchstatistics.R')
+source('06-ling/00-setup/setup-fleets.R')
+source('06-ling/00-setup/setup-model.R')
+source('06-ling/00-setup/setup-catchdistribution.R')
+source('06-ling/00-setup/setup-indices.R')
 
 file.copy('itterfitter.sh',gd$dir)
 file.copy('run.R',gd$dir)

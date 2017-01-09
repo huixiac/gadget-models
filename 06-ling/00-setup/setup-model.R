@@ -41,7 +41,8 @@ ling.imm <-
                 maxage = 10,
                 minlength = 20,
                 maxlength = 160,
-                dl = 4) %>%
+                dl = 4,
+                livesonareas = 1) %>%
   gadget_update('initialconditions',
                 normalparam = data_frame(age = 3:10,
                                          area = 1,
@@ -96,7 +97,8 @@ ling.mat <-
                 maxage = 15,
                 minlength = 20,
                 maxlength = 160,
-                dl = 4) %>%
+                dl = 4,
+                livesonareas = 1) %>%
   gadget_update('initialconditions',
                 normalparam = data_frame(age = 5:1510,
                                          area = 1,
@@ -132,6 +134,10 @@ ling.mat %>%
 
 
 
+
+
+
+if(FALSE){
 
 ## lets find proportion mature @age
 matatage <- mfdb_sample_count(mdb, c('maturity_stage','age'),
@@ -278,3 +284,4 @@ init.params[grepl('l50',init.params$switch),'optimise'] <- 1
 
 write.gadget.parameters(init.params,file='params.in')
 setwd(curr.dir)
+}
