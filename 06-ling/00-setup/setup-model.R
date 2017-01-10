@@ -8,10 +8,11 @@ lw.constants <-
          !is.na(weight)) %>% 
   select(length,weight) %>% 
   collect(n=Inf) %>% 
-  lm(log(weight)~log(length),.) %>% 
+  lm(log(weight/1e3)~log(length),.) %>% 
   broom::tidy() %>% 
   select(estimate)
-
+## transport back to right dimension
+lw.constants$estimate[1] <- exp(lw.constants$estimate[1])
 
 ## initial conditions sigma
 init.sigma <- 
@@ -22,17 +23,41 @@ init.sigma <-
   dplyr::group_by(age) %>% 
   dplyr::summarise(ml=mean(length,na.rm=TRUE),ms=sd(length,na.rm=TRUE))
 
+## initial guess for the maturity ogive:
+mat.l50 <- 
+  mfdb_dplyr_sample(mdb) %>% 
+  filter(species == 'LIN',
+         sampling_type == 'IGFS',
+         !is.na(maturity_stage)) %>% 
+  select(length,maturity_stage) %>% 
+  group_by(length,maturity_stage) %>% 
+  dplyr::summarise(n=n()) %>% 
+  group_by(length) %>% 
+  dplyr::mutate(p=n/sum(n)) %>% 
+  ungroup() %>% 
+  filter(maturity_stage=='2',p>0.50,length>25) %>% 
+  dplyr::summarise(l50=min(length)) %>% 
+  collect(n=Inf)
+
+
 
 ## convenience functions
 von_b_formula <- function(a,linf='Linf',k='k',recl='recl'){
   a %>% 
-    map(~infuser::infuse("{{linf}} * (1 - exp(-1 * (0.001 * {{k}}) * ({{a}} - (1 + log(1 - {{recl}}/{{linf}})/(0.001 * k)))))",
+    map(~infuser::infuse("{{linf}} * (1 - exp(-1 * (0.001 * {{k}}) * ({{a}} - (1 + log(1 - {{recl}}/{{linf}})/(0.001 * {{k}})))))",
                          a=.,linf=linf,k=k,recl=recl)) %>% 
     map(~parse(text=.) %>% 
           map(to.gadget.formulae)) %>% 
     unlist()
 }
 
+init_guess <- function(dat,pattern, value,  lower, upper, optimise){
+  dat[grepl(pattern,dat$switch),'value'] <- value
+  dat[grepl(pattern,dat$switch),'upper'] <- upper
+  dat[grepl(pattern,dat$switch),'lower'] <- lower
+  dat[grepl(pattern,dat$switch),'optimise'] <- optimise
+  return(dat)
+}
 ## setup the immature stock first
 ling.imm <- 
   gadgetstock('lingimm',gd$dir,missingOkay = TRUE) %>%
@@ -43,26 +68,24 @@ ling.imm <-
                 maxlength = 160,
                 dl = 4,
                 livesonareas = 1) %>%
+  gadget_update('doesgrow',
+                growthparameters=c(k=to.gadget.formulae(quote(0.001*ling.k)),
+                                   linf='#ling.Linf', 
+                                   alpha = '#lingimm.walpha',
+                                   beta = '#lingimm.wbeta'),
+                beta = to.gadget.formulae(quote(10*ling.bbin))) %>% 
   gadget_update('initialconditions',
                 normalparam = data_frame(age = 3:10,
                                          area = 1,
-                                         age.factor = 1,
-                                         area.factor = 1,
-                                         number = parse(text=sprintf('lingimm.init.scalar*lingimm.init.%s',age)) %>% 
+                                         age.factor = parse(text=sprintf('exp(-1*lingimm.M*%1$s)*lingimm.init.%1$s',age)) %>% 
                                            map(to.gadget.formulae) %>% 
-                                           unlist(),
-                                         mean = von_b_formula(age,linf='ling.linf',k='ling.k',recl='ling.recl'),
+                                           unlist(),   
+                                         area.factor = '#lingimm.init.scalar',
+                                         mean = von_b_formula(age,linf='ling.Linf',k='ling.k',recl='ling.recl'),
                                          stddev = init.sigma$ms[age],
-                                         alpha = '#ling.walpha',
-                                         beta = '#ling.wbeta')) %>% 
+                                         alpha = '#lingimm.walpha',
+                                         beta = '#lingimm.wbeta')) %>% 
   ## does"something" updates should also allow for other names, e.g. doesrenew -> recruitment etc..
-  gadget_update('doesgrow',  
-                growthfunction = 'lengthvbsimple',
-                growthparameters = c(linf='#ling.linf',k='( * 0.001 #ling.k)', '#ling.walpha','#ling.wbeta'),
-                beta='(* 10 #ling.bbin)', 
-                maxlengthgroupgrowth=15) %>%
-  gadget_update('naturalmortality',   
-                rep('#ling.M',8)) %>%
   gadget_update('refweight',
                 data=data_frame(length=seq(20,160,4),
                                 mean=lw.constants$estimate[1]*length^lw.constants$estimate[2])) %>% 
@@ -82,10 +105,10 @@ ling.imm <-
                                          number = parse(text=sprintf('ling.rec.scalar*ling.rec.%s',year)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),
-                                         mean = von_b_formula(age,linf='ling.linf',k='ling.k',recl='ling.recl'),
+                                         mean = von_b_formula(age,linf='ling.Linf',k='ling.k',recl='ling.recl'),
                                          stddev = '#ling.rec.sd',
-                                         alpha = '#ling.walpha',
-                                         beta = '#ling.wbeta')) 
+                                         alpha = '#lingimm.walpha',
+                                         beta = '#lingimm.wbeta')) 
 
 
 
@@ -99,26 +122,24 @@ ling.mat <-
                 maxlength = 160,
                 dl = 4,
                 livesonareas = 1) %>%
+  gadget_update('doesgrow',
+                growthparameters=c(k=to.gadget.formulae(quote(0.001*ling.k)),
+                                   linf='#ling.Linf', 
+                                   alpha = '#lingimm.walpha',
+                                   beta = '#lingimm.wbeta'),
+                beta = to.gadget.formulae(quote(10*ling.bbin))) %>% 
   gadget_update('initialconditions',
                 normalparam = data_frame(age = 5:1510,
                                          area = 1,
-                                         age.factor = 1,
-                                         area.factor = 1,
-                                         number = parse(text=sprintf('lingmat.init.scalar*lingmat.init.%s',age)) %>% 
+                                         age.factor = parse(text=sprintf('exp(-1*lingmat.M*%1$s)*lingmat.init.%1$s',age)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),
-                                         mean = von_b_formula(age,linf='ling.linf',k='ling.k',recl='ling.recl'),
+                                         area.factor = '#lingmat.init.scalar',
+                                         mean = von_b_formula(age,linf='ling.Linf',k='ling.k',recl='ling.recl'),
                                          stddev = init.sigma$ms[age],
-                                         alpha = '#ling.walpha',
-                                         beta = '#ling.wbeta')) %>% 
+                                         alpha = '#lingmat.walpha',
+                                         beta = '#lingmat.wbeta')) %>% 
   ## does"something" updates should also allow for other names, e.g. doesrenew -> recruitment etc..
-  gadget_update('doesgrow',  
-                growthfunction = 'lengthvbsimple',
-                growthparameters = c(linf='#ling.linf',k='( * 0.001 #ling.k)', '#ling.walpha','#ling.wbeta'),
-                beta='(* 10 #ling.bbin)', 
-                maxlengthgroupgrowth=15) %>%
-  gadget_update('naturalmortality',   
-                rep('#ling.M',11)) %>%
   gadget_update('refweight',
                 data=data_frame(length=seq(20,160,4),
                                 mean=lw.constants$estimate[1]*length^lw.constants$estimate[2])) %>% 
@@ -134,154 +155,24 @@ ling.mat %>%
 
 
 
+Sys.setenv(GADGET_WORKING_DIR=normalizePath(gd$dir))
+callGadget(s=1,log = 'init.log') #ignore.stderr = FALSE,
 
-
-
-if(FALSE){
-
-## lets find proportion mature @age
-matatage <- mfdb_sample_count(mdb, c('maturity_stage','age'),
-                             append(list(species = 'LIN'),
-                                    list(sampling_type='IGFS',
-                                         age=mfdb_step_interval('',by=1,from=1,to=20),
-                                         maturity_stage = mfdb_group(lingimm = 1, lingmat = 2:5))))[[1]] %>%
-  dplyr::mutate(age=as.numeric(age)) %>% 
-  dplyr::group_by(age) %>% 
-  dplyr::mutate(prop = number/sum(number)) %>% 
-  select(stock=maturity_stage,age,prop)
-
-p.imm <- (filter(matatage,stock=='lingimm') %>% arrange(age))[['prop']][1:9] ## recruits are thrown away
-p.mat <- (filter(matatage,stock=='lingmat') %>% arrange(age))[['prop']] 
-
-## populate the model with sane defaults
-opt <- gadget.options(type='simple2stock')
-
-## adapt to Ling
-weight.alpha <-  as.numeric(lw.tmp[1]) #0.00000495
-weight.beta <- as.numeric(lw.tmp[2]) #3.01793
-
-opt$area$numofareas <- 1
-opt$time$firstyear <- min(year_range)
-opt$time$lastyear <- max(year_range)
-
-
-
-## immature stock
-opt$stocks$imm <-
-  within(opt$stocks$imm,{
-    name <- 'lingimm'
-    minage <- 1
-    maxage <- 10
-    minlength <- 4
-    maxlength <- 180
-    dl <- 2
-    growth <- c(linf='#ling.Linf',k='( * 0.001 #ling.k)',
-                beta='(* 10 #ling.bbin)', binn=15,recl='#ling.recl')
-    weight <- c(a=weight.alpha, b=weight.beta)
-    init.abund <- sprintf('(* 0.01 %s %s)',c(0,p.imm),
-                          c(0,sprintf('#ling.age%s',2:10)))
-    n <- sprintf('(* 1000 #ling.rec%s)',year_range)
-    doesmature <- 1
-    maturityfunction <- 'continuous'
-    maturestocksandratios <- 'lingmat 1'
-    maturity.coefficients <- '( * 0.001 #ling.mat1) #ling.mat2 0 0'
-    sigma <- c(init.sigma$ms[1],head(init.sigma$ms,14),rep(init.sigma$ms[14],5))
-      #list(alpha='( * 0.001 #mat1)',
-                            #      l50='#mat2', beta=0,
-                            #      a50=0)
-
-    ## using the same M-formulation as cod (is that a good idea, Muggur?)
-    M <- rep(0.15,10) #c(0.5,  0.35, 0.2, 0.2,  0.2, 0.2, 0.2, 0.2, 0.2, 0.3)
-    
-    maturitysteps <- '0'
-    doesmove <- 1
-    transitionstep <- 4
-    transitionstocksandratios <- "lingmat 1"
-    doesmigrate <- 0
-    doesrenew <- 1
-    renewal <- list(minlength=4, maxlength=28)
-  })
-
-
-## mature stock
-opt$stocks$mat <-
-  within(opt$stocks$mat,{
-    name <- 'lingmat'
-    minage <- 3
-    maxage <- 20
-    minlength <- 20
-    maxlength <- 180
-    dl <- 2
-    M <- rep(0.15, 18) #c(0.2,  0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.3, 0.5, 0.7)
-    growth <- c(linf='#ling.Linf',k='( * 0.001 #ling.k)',
-                beta='(* 10 #ling.bbin)', binn=15,recl='#ling.recl')
-    weight <- c(a=weight.alpha, b=weight.beta)
-    init.abund <- sprintf('(* 0.01 %s %s)',
-                          c(p.mat,  exp(-0.5*1:3)*0.0001),
-                          c(0,sprintf('#ling.age%s',4:10),rep('#ling.age10',10)))
-    sigma <- c(init.sigma$ms[1],head(init.sigma$ms,14),rep(init.sigma$ms[14],5))
-    doesmature <- 0
-    doesmigrate <- 0
-  })
-
-
-## create the gadget skeleton
-gm <- gadget.skeleton(time=opt$time, area=opt$area,
-                      stocks=opt$stocks,opt$fleets)
-
-gm@stocks$imm@initialdata$area.factor <- '( * 100 #ling.mult)'
-gm@stocks$mat@initialdata$area.factor <- '( * 100 #ling.mult)'
-
-gm@fleets <- list(igfs.fleet,#aut.fleet,
-                  lln.fleet,gil.fleet,bmt.fleet,foreign.fleet)
-gd.list <- list(dir=gd$dir)
-Rgadget:::gadget_dir_write(gd.list,gm)
-
-curr.dir <- getwd()
-setwd(gd$dir)
-callGadget(s=1,ignore.stderr = FALSE)
-
-init.params <- read.gadget.parameters('params.out')
-
-init.params[c('ling.Linf','ling.k','ling.bbin','ling.mult',
-              grep('age',rownames(init.params),value=TRUE),
-              'ling.mat1','ling.mat2'),] <- 
-  read.table(text='switch	 value 		lower 	upper 	optimise
-ling.Linf	         180	      80     200        0
-ling.k	          90	       60      100        1
-ling.bbin	         6	   1e-08    100        1
-ling.mult	         100	     0.1      100        1
-ling.age2	         35	    0.01     150        1
-ling.age3	         25	    0.01     120        1
-ling.age4	         15	   0.001     100        1
-ling.age5	          7	  0.0001     100        1
-ling.age6	          7	   1e-05     100        1
-ling.age7	          5	   1e-08     100        1
-ling.age8	          5	   1e-10     100        1
-ling.age9	         25	   1e-12     100        1
-ling.age10	         10	   1e-15     100        1
-ling.mat1	          70	      10      200        1
-ling.mat2	          100	      60      150        1',header=TRUE) 
-
-init.params$switch <- rownames(init.params)
-
-init.params[grepl('rec[0-9]',init.params$switch),'value'] <- 1
-init.params[grepl('rec[0-9]',init.params$switch),'upper'] <- 4
-init.params[grepl('rec[0-9]',init.params$switch),'lower'] <- 0.001
-init.params[grepl('rec[0-9]',init.params$switch),'optimise'] <- 1
-
-init.params['ling.recl',-1] <- c(12, 4, 20,1)
-
-init.params[grepl('alpha',init.params$switch),'value'] <- 0.5
-init.params[grepl('alpha',init.params$switch),'upper'] <- 3
-init.params[grepl('alpha',init.params$switch),'lower'] <- 0.01
-init.params[grepl('alpha',init.params$switch),'optimise'] <- 1
-
-init.params[grepl('l50',init.params$switch),'value'] <- 50
-init.params[grepl('l50',init.params$switch),'upper'] <- 100
-init.params[grepl('l50',init.params$switch),'lower'] <- 10
-init.params[grepl('l50',init.params$switch),'optimise'] <- 1
-
-write.gadget.parameters(init.params,file='params.in')
-setwd(curr.dir)
-}
+## update the input parameters with sane initial guesses
+read.gadget.parameters(sprintf('%s/params.out',gd$dir)) %>% 
+  init_guess('rec.[0-9]|init.[0-9]',1,0.001,4,1) %>%
+  init_guess('recl',12,4,20,1) %>% 
+  init_guess('rec.sd',5, 4, 20,1) %>% 
+  init_guess('Linf',160, 100, 160,0) %>% 
+  init_guess('k$',90, 40, 100,1) %>% 
+  init_guess('bbin',6, 1e-08, 100, 1) %>% 
+  init_guess('alpha', 0.5,  0.01, 3, 1) %>% 
+  init_guess('l50',50,10,100,1) %>% 
+  init_guess('walpha',lw.constants$estimate[1], 1e-10, 1,0) %>% 
+  init_guess('wbeta',lw.constants$estimate[2], 2, 4,0) %>% 
+  init_guess('M$',0.1,0.001,1,0) %>% 
+  init_guess('rec.scalar',1000,100,10000,0) %>% 
+  init_guess('init.scalar',100,100,10000,0) %>% 
+  init_guess('mat2',mat.l50$l50,0.75*mat.l50$l50,1.25*mat.l50$l50,1) %>% 
+  init_guess('mat1',70,  10, 200, 1) %>% 
+  write.gadget.parameters(.,file=sprintf('%s/params.in',gd$dir))

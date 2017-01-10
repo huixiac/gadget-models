@@ -29,7 +29,7 @@ rm(aggdata)
 aggdata <-
     mfdb_sample_count(mdb, c('age', 'length'),
                       c(list(sampling_type = 'IGFS',
-                             age = mfdb_step_interval('age',by=3,from=1,to=12,open_ended = TRUE),
+                             age = mfdb_step_interval('age',by=1,from=3,to=12,open_ended = TRUE),
                              length = mfdb_interval("len", 
                                                     c(0,seq(minlength, maxlength, by = 4)),
                                                     open_ended = TRUE)),
@@ -52,7 +52,8 @@ aggdata <-
                     append(defaults,
                            list(sampling_type='IGFS',
                                 age=mfdb_group(mat_ages=5:20),
-                                length = mfdb_step_interval('len', by = 8, to = maxlength,
+                                length = mfdb_step_interval('len', 
+                                                            by = 8, to = maxlength,
                                                             open_ended = TRUE),              
                                 maturity_stage = mfdb_group(lingimm = 1, lingmat = 2:5))))
 
@@ -67,13 +68,15 @@ gadget_dir_write(gd,.)
 
 
 ## Query length data to create lln catchdistribution components
-aggdata <- mfdb_sample_count(mdb, c('age', 'length'), 
-                             c(list(
-                               sampling_type = 'SEA',
-                               #    gear = c('LLN','HLN'),
-                               length = mfdb_interval("len", seq(minlength, maxlength, by = 4),
-                                                      open_ended = TRUE)),
-                               defaults))
+aggdata <- 
+  mfdb_sample_count(mdb, c('age', 'length'), 
+                    c(list(
+                      sampling_type = 'SEA',
+                      #    gear = c('LLN','HLN'),
+                      length = mfdb_interval("len", 
+                                             seq(minlength, maxlength, by = 4),
+                                             open_ended = TRUE)),
+                      defaults))
 attributes(aggdata[['0.0.0.0.0']])$age$all <- minage:maxage
 
 gadget_likelihood_component("catchdistribution",
@@ -89,7 +92,7 @@ aggdata <-
     mfdb_sample_count(mdb, c('age', 'length'),
                       c(list(sampling_type = 'SEA',
 #                             gear = c('LLN','HLN'),
-                             age = mfdb_step_interval('age',by=3,from=1,to=12,open_ended = TRUE),
+                             age = mfdb_step_interval('age',by=1,from=3,to=12,open_ended = TRUE),
                              length = mfdb_interval("len", seq(minlength, maxlength, by = 4),
                                                     open_ended = TRUE)),
                         defaults))
