@@ -75,7 +75,7 @@ ling.imm <-
                                    beta = '#lingimm.wbeta'),
                 beta = to.gadget.formulae(quote(10*ling.bbin))) %>% 
   gadget_update('initialconditions',
-                normalparam = data_frame(age = 3:10,
+                normalparam = data_frame(age = .[[1]]$minage:.[[1]]$maxage,
                                          area = 1,
                                          age.factor = parse(text=sprintf('exp(-1*lingimm.M*%1$s)*lingimm.init.%1$s',age)) %>% 
                                            map(to.gadget.formulae) %>% 
@@ -87,7 +87,7 @@ ling.imm <-
                                          beta = '#lingimm.wbeta')) %>% 
   ## does"something" updates should also allow for other names, e.g. doesrenew -> recruitment etc..
   gadget_update('refweight',
-                data=data_frame(length=seq(20,160,4),
+                data=data_frame(length=seq(.[[1]]$minlength,.[[1]]$maxlength,.[[1]]$dl),
                                 mean=lw.constants$estimate[1]*length^lw.constants$estimate[2])) %>% 
   gadget_update('iseaten',1) %>% 
   gadget_update('doesmature', 
@@ -95,13 +95,13 @@ ling.imm <-
                 maturestocksandratios = 'lingmat 1',
                 coefficients = '( * 0.001 #ling.mat1) #ling.mat2 0 0') %>% 
   gadget_update('doesmove',
-                transitionstockandratios = 'lingmat 1',
+                transitionstocksandratios = 'lingmat 1',
                 transitionstep = 4) %>% 
   gadget_update('doesrenew',
                 normalparam = data_frame(year = year_range,
                                          step = 1,
                                          area = 1,
-                                         age = 3,
+                                         age = .[[1]]$minage,
                                          number = parse(text=sprintf('ling.rec.scalar*ling.rec.%s',year)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),
@@ -129,7 +129,7 @@ ling.mat <-
                                    beta = '#lingimm.wbeta'),
                 beta = to.gadget.formulae(quote(10*ling.bbin))) %>% 
   gadget_update('initialconditions',
-                normalparam = data_frame(age = 5:1510,
+                normalparam = data_frame(age = .[[1]]$minage:.[[1]]$maxage,
                                          area = 1,
                                          age.factor = parse(text=sprintf('exp(-1*lingmat.M*%1$s)*lingmat.init.%1$s',age)) %>% 
                                            map(to.gadget.formulae) %>% 
@@ -141,7 +141,7 @@ ling.mat <-
                                          beta = '#lingmat.wbeta')) %>% 
   ## does"something" updates should also allow for other names, e.g. doesrenew -> recruitment etc..
   gadget_update('refweight',
-                data=data_frame(length=seq(20,160,4),
+                data=data_frame(length=seq(.[[1]]$minlength,.[[1]]$maxlength,.[[1]]$dl),
                                 mean=lw.constants$estimate[1]*length^lw.constants$estimate[2])) %>% 
   gadget_update('iseaten',1) 
 
@@ -171,8 +171,8 @@ read.gadget.parameters(sprintf('%s/params.out',gd$dir)) %>%
   init_guess('walpha',lw.constants$estimate[1], 1e-10, 1,0) %>% 
   init_guess('wbeta',lw.constants$estimate[2], 2, 4,0) %>% 
   init_guess('M$',0.1,0.001,1,0) %>% 
-  init_guess('rec.scalar',1000,100,10000,0) %>% 
-  init_guess('init.scalar',100,100,10000,0) %>% 
+  init_guess('rec.scalar',1000,1,10000,1) %>% 
+  init_guess('init.scalar',100,1,10000,1) %>% 
   init_guess('mat2',mat.l50$l50,0.75*mat.l50$l50,1.25*mat.l50$l50,1) %>% 
   init_guess('mat1',70,  10, 200, 1) %>% 
   write.gadget.parameters(.,file=sprintf('%s/params.in',gd$dir))
