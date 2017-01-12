@@ -1,9 +1,10 @@
 library(mfdb)
 library(tidyverse)
 library(Rgadget)
+bootstrap <- FALSE
 ## Create a gadget directory, define some defaults to use with our queries below
 gd <- gadget_directory("06-ling/01-ling")
-mdb<-mfdb('Iceland')
+mdb<-mfdb('Iceland',db_params=list(host='hafgeimur.hafro.is'))
 
 year_range <- 1982:2016
 
@@ -19,6 +20,7 @@ defaults <- list(
     year = year_range,
     species = 'LIN')
 
+
 gadgetfile('Modelfiles/time',
            file_type = 'time',
            components = list(list(firstyear = 1982,
@@ -33,27 +35,19 @@ gadget_areafile(
   size = mfdb_area_size(mdb, defaults)[[1]],
   temperature = mfdb_temperature(mdb, defaults)[[1]]) %>% 
 gadget_dir_write(gd,.)
-## Write a penalty component to the likelihood file
 
-gadget_likelihood_component("penalty",
-                            name = "bounds",
-                            weight = "0.5",
-                            data = data.frame(
-                              switch = c("default"),
-                              power = c(2),
-                              upperW=10000,
-                              lowerW=10000,
-                              stringsAsFactors = FALSE)) %>% 
-gadget_dir_write(gd,.)
-gadget_likelihood_component("understocking",
-                            name = "understocking",
-                            weight = "100") %>% 
-gadget_dir_write(gd,.)
 
 source('06-ling/00-setup/setup-fleets.R')
 source('06-ling/00-setup/setup-model.R')
 source('06-ling/00-setup/setup-catchdistribution.R')
 source('06-ling/00-setup/setup-indices.R')
+source('06-ling/00-setup/setup-likelihood.R')
+
+
+if(bootstrap){
+  source('06-ling/00-setup/setup-bootstrap.R')
+  file.copy(sprintf('%s/bootrun.R','06-ling/00-setup'),gd$dir)
+}
 
 file.copy(sprintf('%s/itterfitter.sh','06-ling/00-setup'),gd$dir)
 file.copy(sprintf('%s/run.R','06-ling/00-setup'),gd$dir)

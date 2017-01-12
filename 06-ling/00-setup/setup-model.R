@@ -68,9 +68,9 @@ ling.imm <-
                 maxlength = 160,
                 dl = 4,
                 livesonareas = 1) %>%
-  gadget_update('doesgrow',
-                growthparameters=c(k=to.gadget.formulae(quote(0.001*ling.k)),
-                                   linf='#ling.Linf', 
+  gadget_update('doesgrow', ## note to self the order of these parameters make difference
+                growthparameters=c(linf='#ling.Linf', 
+                                   k=to.gadget.formulae(quote(0.001*ling.k)),
                                    alpha = '#lingimm.walpha',
                                    beta = '#lingimm.wbeta'),
                 beta = to.gadget.formulae(quote(10*ling.bbin))) %>% 
@@ -122,9 +122,9 @@ ling.mat <-
                 maxlength = 160,
                 dl = 4,
                 livesonareas = 1) %>%
-  gadget_update('doesgrow',
-                growthparameters=c(k=to.gadget.formulae(quote(0.001*ling.k)),
-                                   linf='#ling.Linf', 
+  gadget_update('doesgrow', ## note to self the order of these parameters make difference
+                growthparameters=c(linf='#ling.Linf', 
+                                   k=to.gadget.formulae(quote(0.001*ling.k)),
                                    alpha = '#lingimm.walpha',
                                    beta = '#lingimm.wbeta'),
                 beta = to.gadget.formulae(quote(10*ling.bbin))) %>% 
@@ -170,9 +170,9 @@ read.gadget.parameters(sprintf('%s/params.out',gd$dir)) %>%
   init_guess('l50',50,10,100,1) %>% 
   init_guess('walpha',lw.constants$estimate[1], 1e-10, 1,0) %>% 
   init_guess('wbeta',lw.constants$estimate[2], 2, 4,0) %>% 
-  init_guess('M$',0.1,0.001,1,0) %>% 
-  init_guess('rec.scalar',1000,1,10000,1) %>% 
-  init_guess('init.scalar',100,1,10000,1) %>% 
+  init_guess('M$',0.15,0.001,1,0) %>% 
+  init_guess('rec.scalar',500,1,10000,0) %>% 
+  init_guess('init.scalar',200,1,10000,0) %>% 
   init_guess('mat2',mat.l50$l50,0.75*mat.l50$l50,1.25*mat.l50$l50,1) %>% 
   init_guess('mat1',70,  10, 200, 1) %>% 
   write.gadget.parameters(.,file=sprintf('%s/params.in',gd$dir))
