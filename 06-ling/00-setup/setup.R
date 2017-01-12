@@ -3,7 +3,7 @@ library(tidyverse)
 library(Rgadget)
 bootstrap <- FALSE
 ## Create a gadget directory, define some defaults to use with our queries below
-gd <- gadget_directory("06-ling/01-ling")
+gd <- gadget_directory("06-ling/02-base")
 mdb<-mfdb('Iceland',db_params=list(host='hafgeimur.hafro.is'))
 
 year_range <- 1982:2016

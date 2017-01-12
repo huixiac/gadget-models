@@ -77,7 +77,7 @@ ling.imm <-
   gadget_update('initialconditions',
                 normalparam = data_frame(age = .[[1]]$minage:.[[1]]$maxage,
                                          area = 1,
-                                         age.factor = parse(text=sprintf('exp(-1*lingimm.M*%1$s)*lingimm.init.%1$s',age)) %>% 
+                                         age.factor = parse(text=sprintf('exp(-1*lingimm.M*%1$s*ling.init.F)*lingimm.init.%1$s',age)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),   
                                          area.factor = '#lingimm.init.scalar',
@@ -102,7 +102,7 @@ ling.imm <-
                                          step = 1,
                                          area = 1,
                                          age = .[[1]]$minage,
-                                         number = parse(text=sprintf('ling.rec.scalar*ling.rec.%s',year)) %>% 
+                                         number = parse(text=sprintf('ling.rec.scalar*ling.rec.%s*ling.init.F',year)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),
                                          mean = von_b_formula(age,linf='ling.Linf',k='ling.k',recl='ling.recl'),
@@ -171,8 +171,8 @@ read.gadget.parameters(sprintf('%s/params.out',gd$dir)) %>%
   init_guess('walpha',lw.constants$estimate[1], 1e-10, 1,0) %>% 
   init_guess('wbeta',lw.constants$estimate[2], 2, 4,0) %>% 
   init_guess('M$',0.15,0.001,1,0) %>% 
-  init_guess('rec.scalar',500,1,10000,0) %>% 
-  init_guess('init.scalar',200,1,10000,0) %>% 
+  init_guess('rec.scalar',400,1,500,1) %>% 
+  init_guess('init.scalar',200,1,300,1) %>% 
   init_guess('mat2',mat.l50$l50,0.75*mat.l50$l50,1.25*mat.l50$l50,1) %>% 
   init_guess('mat1',70,  10, 200, 1) %>% 
   write.gadget.parameters(.,file=sprintf('%s/params.in',gd$dir))
