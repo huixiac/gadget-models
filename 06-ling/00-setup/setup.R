@@ -43,27 +43,9 @@ source('06-ling/00-setup/setup-indices.R')
 source('06-ling/00-setup/setup-likelihood.R')
 
 ## setting up model variants
-est_slope <- gadget.variant.dir(gd$dir,'est_slope')
-gadgetlikelihood('likelihood',est_slope) %>% 
-  gadget_update("surveyindices",
-                name = "si.20-50",
-                weight = 1,
-                data = igfs.SI1[[1]],
-                fittype = 'loglinearfit',
-                stocknames = c("lingimm","lingmat")) %>% 
-  gadget_update("surveyindices",
-                name = "si.50-70",
-                weight = 1,
-                data = igfs.SI2[[1]],
-                fittype = 'loglinearfit',
-                stocknames = c("lingimm","lingmat")) %>% 
-  gadget_update("surveyindices",
-                name = "si.70-180",
-                weight = 1,
-                data = igfs.SI3[[1]],
-                fittype = 'loglinearfit',
-                stocknames = c("lingimm","lingmat")) %>% 
-  write.gadget.file(est_slope)
+source('06-ling/00-setup/setup-est_slope.R')
+source('06-ling/00-setup/setup-three_fleets.R')
+
 
 if(bootstrap){
   source('06-ling/00-setup/setup-bootstrap.R')

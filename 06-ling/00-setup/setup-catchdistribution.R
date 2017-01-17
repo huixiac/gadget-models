@@ -23,7 +23,7 @@ for(i in seq_along(ldist.igfs)){
 aldist.igfs <-
   mfdb_sample_count(mdb, c('age', 'length'),
                     c(list(sampling_type = 'IGFS',
-                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage-3,
+                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage+1,
                                                     open_ended = TRUE),
                            length = mfdb_interval("len", 
                                                   c(0,seq(minlength+dl, maxlength, by = dl)),
@@ -63,7 +63,7 @@ aldist.comm <-
   mfdb_sample_count(mdb, c('age', 'length'),
                     c(list(sampling_type = 'SEA',
                            #                             gear = c('LLN','HLN'),
-                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage,open_ended = TRUE),
+                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage+1,open_ended = TRUE),
                            length = mfdb_interval("len", c(0,seq(minlength+dl, maxlength, by = dl)),
                                                   open_ended = TRUE)),
                       defaults))
