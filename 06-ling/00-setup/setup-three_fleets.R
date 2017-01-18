@@ -47,8 +47,10 @@ gadgetfleet('Modelfiles/fleet',three_fleets,missingOkay = TRUE) %>%
                                            'function','exponentiall50',
                                            '#ling.gil.alpha','#ling.gil.l50',
                                            collapse='\n')),
-                data = lln.landings[[1]]) %>% 
-  write.gadget.file(three_fleets)
+                data = lln.landings[[1]]) -> tmp 
+attr(tmp,'file_config')$mainfile_overwrite <- TRUE
+
+write.gadget.file(tmp,three_fleets)
 
 ## setup new catchdistribution likelihoodsldist.comm <- 
 ldist.lln <- 
@@ -174,9 +176,34 @@ gadgetlikelihood('likelihood',three_fleets,missingOkay = TRUE) %>%
                 weight = 1,
                 data = aldist.bmt[[1]],
                 fleetnames = c("bmt"),
-                stocknames = c("lingimm", "lingmat")) %>% 
-  write.gadget.file(three_fleets)
+                stocknames = c("lingimm", "lingmat")) -> tmp
+attr(tmp,'file_config')$mainfile_overwrite <- TRUE
 
+  write.gadget.file(tmp,three_fleets)
+
+
+Sys.setenv(GADGET_WORKING_DIR=normalizePath(gd$dir))
+callGadget(s=1,log = 'init.log',main='three_fleets/main',p='three_fleets/params.out') #ignore.stderr = FALSE,
+
+## update the input parameters with sane initial guesses
+read.gadget.parameters(sprintf('%s/three_fleets/params.out',gd$dir)) %>% 
+  init_guess('rec.[0-9]|init.[0-9]',1,0.001,100,1) %>%
+  init_guess('recl',12,4,20,1) %>% 
+  init_guess('rec.sd',5, 4, 20,1) %>% 
+  init_guess('Linf',160, 100, 160,0) %>% 
+  init_guess('k$',90, 40, 100,1) %>% 
+  init_guess('bbin',6, 1e-08, 100, 1) %>% 
+  init_guess('alpha', 0.5,  0.01, 3, 1) %>% 
+  init_guess('l50',50,10,100,1) %>% 
+  init_guess('walpha',lw.constants$estimate[1], 1e-10, 1,0) %>% 
+  init_guess('wbeta',lw.constants$estimate[2], 2, 4,0) %>% 
+  init_guess('M$',0.15,0.001,1,0) %>% 
+  init_guess('rec.scalar',400,1,500,1) %>% 
+  init_guess('init.scalar',200,1,300,1) %>% 
+  init_guess('mat2',mat.l50$l50,0.75*mat.l50$l50,1.25*mat.l50$l50,1) %>% 
+  init_guess('mat1',70,  10, 200, 1) %>% 
+  init_guess('init.F',0.4,0.1,1,0) %>% 
+  write.gadget.parameters(.,file=sprintf('%s/params.in',gd$dir))
 
 
   
