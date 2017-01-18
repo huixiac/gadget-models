@@ -39,7 +39,7 @@ gadgetfleet('Modelfiles/fleet',three_fleets,missingOkay = TRUE) %>%
                                            'function','exponentiall50',
                                            '#ling.bmt.alpha','#ling.bmt.l50',
                                            collapse='\n')),
-                data = lln.landings[[1]]) %>% 
+                data = bmt.landings[[1]]) %>% 
   gadget_update('totalfleet',
                 name = 'gil',
                 suitability = paste0('\n',
@@ -47,7 +47,7 @@ gadgetfleet('Modelfiles/fleet',three_fleets,missingOkay = TRUE) %>%
                                            'function','exponentiall50',
                                            '#ling.gil.alpha','#ling.gil.l50',
                                            collapse='\n')),
-                data = lln.landings[[1]]) -> tmp 
+                data = gil.landings[[1]]) -> tmp 
 attr(tmp,'file_config')$mainfile_overwrite <- TRUE
 ## fixes due to read.gadget.file issues
 #tmp[[1]][4] <- NULL
