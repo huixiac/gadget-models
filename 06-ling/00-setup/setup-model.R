@@ -3,7 +3,7 @@
 ## weight length relationship
 lw.constants <- 
   mfdb_dplyr_sample(mdb) %>% 
-  filter(species == 'LIN',
+  filter(species == defaults$species,
          sampling_type == 'IGFS',
          !is.na(weight)) %>% 
   select(length,weight) %>% 
@@ -17,7 +17,7 @@ lw.constants$estimate[1] <- exp(lw.constants$estimate[1])
 ## initial conditions sigma
 init.sigma <- 
   mfdb_dplyr_sample(mdb) %>% 
-  dplyr::filter(species == 'LIN',age >0,!is.na(length))  %>% 
+  dplyr::filter(species == defaults$species,age >0,!is.na(length))  %>% 
   dplyr::select(age,length) %>% 
   dplyr::collect(n=Inf) %>% 
   dplyr::group_by(age) %>% 
@@ -26,7 +26,7 @@ init.sigma <-
 ## initial guess for the maturity ogive:
 mat.l50 <- 
   mfdb_dplyr_sample(mdb) %>% 
-  filter(species == 'LIN',
+  filter(species == defaults$species,
          sampling_type == 'IGFS',
          !is.na(maturity_stage)) %>% 
   select(length,maturity_stage) %>% 
@@ -40,24 +40,6 @@ mat.l50 <-
   collect(n=Inf)
 
 
-
-## convenience functions
-von_b_formula <- function(a,linf='Linf',k='k',recl='recl'){
-  a %>% 
-    map(~infuser::infuse("{{linf}} * (1 - exp(-1 * (0.001 * {{k}}) * ({{a}} - (1 + log(1 - {{recl}}/{{linf}})/(0.001 * {{k}})))))",
-                         a=.,linf=linf,k=k,recl=recl)) %>% 
-    map(~parse(text=.) %>% 
-          map(to.gadget.formulae)) %>% 
-    unlist()
-}
-
-init_guess <- function(dat,pattern, value,  lower, upper, optimise){
-  dat[grepl(pattern,dat$switch),'value'] <- value
-  dat[grepl(pattern,dat$switch),'upper'] <- upper
-  dat[grepl(pattern,dat$switch),'lower'] <- lower
-  dat[grepl(pattern,dat$switch),'optimise'] <- optimise
-  return(dat)
-}
 ## setup the immature stock first
 ling.imm <- 
   gadgetstock('lingimm',gd$dir,missingOkay = TRUE) %>%

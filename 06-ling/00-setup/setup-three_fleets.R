@@ -49,6 +49,11 @@ gadgetfleet('Modelfiles/fleet',three_fleets,missingOkay = TRUE) %>%
                                            collapse='\n')),
                 data = lln.landings[[1]]) -> tmp 
 attr(tmp,'file_config')$mainfile_overwrite <- TRUE
+## fixes due to read.gadget.file issues
+#tmp[[1]][4] <- NULL
+tmp[[1]][4]$suitability$suitability <- NULL
+#tmp[[2]][4] <- NULL
+tmp[[2]][4]$suitability$suitability <- NULL
 
 write.gadget.file(tmp,three_fleets)
 
@@ -203,7 +208,9 @@ read.gadget.parameters(sprintf('%s/three_fleets/params.out',gd$dir)) %>%
   init_guess('mat2',mat.l50$l50,0.75*mat.l50$l50,1.25*mat.l50$l50,1) %>% 
   init_guess('mat1',70,  10, 200, 1) %>% 
   init_guess('init.F',0.4,0.1,1,0) %>% 
-  write.gadget.parameters(.,file=sprintf('%s/params.in',gd$dir))
+  write.gadget.parameters(.,file=sprintf('%s/%s/params.in',gd$dir,'three_fleets'))
+
+file.copy(sprintf('%s/run-three_fleets.R','06-ling/00-setup'),gd$dir)
 
 
   

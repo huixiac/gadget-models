@@ -36,6 +36,7 @@ gadget_areafile(
   temperature = mfdb_temperature(mdb, defaults)[[1]]) %>% 
 gadget_dir_write(gd,.)
 
+source('R/utils.R')
 source('06-ling/00-setup/setup-fleets.R')
 source('06-ling/00-setup/setup-model.R')
 source('06-ling/00-setup/setup-catchdistribution.R')
