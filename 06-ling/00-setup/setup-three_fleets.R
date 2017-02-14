@@ -22,7 +22,7 @@ gil.landings <- mfdb_sample_totalweight(mdb, NULL, c(list(
   defaults))
 
 
-gadgetfleet('Modelfiles/fleet',three_fleets,missingOkay = TRUE) %>%
+gadgetfleet('Modelfiles/fleet',three_fleets,missingOkay = TRUE) -> tmp%>%
   gadget_discard('comm') %>% 
   gadget_update('totalfleet',
                 name = 'lln',
@@ -54,7 +54,8 @@ attr(tmp,'file_config')$mainfile_overwrite <- TRUE
 tmp[[1]][4]$suitability$suitability <- NULL
 #tmp[[2]][4] <- NULL
 tmp[[2]][4]$suitability$suitability <- NULL
-
+tmp[[2]][4]$suitability$lingimm <- gsub('comm','lln',tmp[[2]][4]$suitability$lingimm)
+tmp[[2]][4]$suitability$lingmat <- gsub('comm','lln',tmp[[2]][4]$suitability$lingmat)
 write.gadget.file(tmp,three_fleets)
 
 ## setup new catchdistribution likelihoodsldist.comm <- 

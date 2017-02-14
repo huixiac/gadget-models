@@ -12,7 +12,7 @@ stock_names <- c(imm_stock,mat_stock)
 species_name <- 'tusk'
 
 
-gd <- gadget_directory(sprintf("%s/01-base",base_dir))
+gd <- gadget_directory(sprintf("%s/02-mod",base_dir))
 mdb<-mfdb('Iceland')#,db_params=list(host='hafgeimur.hafro.is'))
 year_range <- 1982:2016
 
@@ -49,6 +49,9 @@ source(sprintf('%s/00-setup/setup-model.R',base_dir))
 source(sprintf('%s/00-setup/setup-catchdistribution.R',base_dir))
 source(sprintf('%s/00-setup/setup-indices.R',base_dir))
 source(sprintf('%s/00-setup/setup-likelihood.R',base_dir))
+
+Sys.setenv(GADGET_WORKING_DIR=normalizePath(gd$dir))
+callGadget(l=1,i='params.in',p='params.init')
 
 ## setting up model variants
 

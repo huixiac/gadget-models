@@ -1,12 +1,13 @@
 ## Collect catches by fleet:
 comm.landings <- mfdb_sample_totalweight(mdb, NULL, c(list(
   #gear=c('HLN','LLN'),
-  samptusk_type = 'LND'),defaults)) 
+  sampling_type = 'LND'),defaults)) 
 
 foreign.landings <-
   mfdb_sample_totalweight(mdb, NULL,
                           c(list(
-                            samptusk_type = 'FLND',
+                            sampling_type = 'FLND',
+                            data_source = c('lods.foreign.landings','statlant.foreign.landings'),
                             species = defaults$species),
                             defaults))
 

@@ -1,23 +1,7 @@
 ## Collect catches by fleet:
-lln.landings <- mfdb_sample_totalweight(mdb, NULL, c(list(
-  gear=c('HLN','LLN'),
-  sampling_type = 'LND',
-  species = defaults$species),
-  defaults))
-
-
-bmt.landings <- mfdb_sample_totalweight(mdb, NULL, c(list(
-  gear=c('BMT','NPT','DSE','PSE','PGT','SHT'),
-  sampling_type = 'LND',
-  species = defaults$species),
-  defaults))
-
-
-gil.landings <- mfdb_sample_totalweight(mdb, NULL, c(list(
-  gear='GIL',
-  sampling_type = 'LND',
-  species = defaults$species),
-  defaults))
+comm.landings <- mfdb_sample_totalweight(mdb, NULL, c(list(
+  #gear=c('HLN','LLN'),
+  sampling_type = 'LND'),defaults)) 
 
 foreign.landings <-
   mfdb_sample_totalweight(mdb, NULL,
@@ -43,35 +27,54 @@ gadgetfleet('Modelfiles/fleet',gd$dir,missingOkay = TRUE) %>%
                                            collapse='\n')),
                 data = igfs.landings) %>%
   gadget_update('totalfleet',
-                name = 'lln',
+                name = 'comm',
                 suitability = paste0('\n',
                                      paste(c('lingimm','lingmat'),
                                            'function','exponentiall50',
-                                           '#ling.lln.alpha','#ling.lln.l50',
+                                           '#ling.comm.alpha','#ling.comm.l50',
                                            collapse='\n')),
-                data = lln.landings[[1]]) %>% 
-  gadget_update('totalfleet',
-                name = 'bmt',
-                suitability = paste0('\n',
-                                     paste(c('lingimm','lingmat'),
-                                           'function','exponentiall50',
-                                           '#ling.bmt.alpha','#ling.bmt.l50',
-                                           collapse='\n')),
-                data = bmt.landings[[1]]) %>% 
-  gadget_update('totalfleet',
-                name = 'gil',
-                suitability = paste0('\n',
-                                     paste(c('lingimm','lingmat'),
-                                           'function','exponentiall50',
-                                           '#ling.gil.alpha','#ling.gil.l50',
-                                           collapse='\n')),
-                data = gil.landings[[1]]) %>% 
+                data = comm.landings[[1]]) %>% 
   gadget_update('totalfleet',
                 name = 'foreign',
                 suitability = paste0('\n',
                                      paste(c('lingimm','lingmat'),
                                            'function','exponentiall50',
-                                           '#ling.lln.alpha','#ling.lln.l50',
+                                           '#ling.comm.alpha','#ling.comm.l50',
                                            collapse='\n')),
                 data = foreign.landings[[1]]) %>% 
   write.gadget.file(gd$dir)
+
+
+
+
+
+
+
+
+ldist.comm <- 
+  mfdb_sample_count(mdb, c('age', 'length'), 
+                    c(list(
+                      sampling_type = 'SEA',
+                      #    gear = c('LLN','HLN'),
+                      length = mfdb_interval("len", 
+                                             c(0,seq(minlength+dl, maxlength, by = dl)),
+                                             open_ended = TRUE)),
+                      defaults))
+
+for(i in seq_along(ldist.comm)){
+  attributes(ldist.comm[[i]])$age$all <- minage:maxage
+  attr(attributes(ldist.comm[[i]])$length$len0,'min') <- minlength
+}
+
+aldist.comm <-
+  mfdb_sample_count(mdb, c('age', 'length'),
+                    c(list(sampling_type = 'SEA',
+                           #                             gear = c('LLN','HLN'),
+                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage+1,open_ended = TRUE),
+                           length = mfdb_interval("len", c(0,seq(minlength+dl, maxlength, by = dl)),
+                                                  open_ended = TRUE)),
+                      defaults))
+for(i in seq_along(aldist.comm)){
+  attr(attributes(aldist.comm[[i]])$length$len0,'min') <- minlength
+}
+

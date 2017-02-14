@@ -5,33 +5,40 @@ minlength <- ling.imm[[1]]$minlength
 dl <- ling.imm[[1]]$dl
 
 ## Query length data to create IGFS catchdistribution components
-ldist.igfs <- mfdb_sample_count(mdb, c('age', 'length'), 
-                             c(list(
-                               sampling_type = 'IGFS',
-                               length = mfdb_interval("len", 
-                                                      c(0,seq(minlength+dl, maxlength, by = dl)),
-                                                      open_ended = TRUE)),
-                               defaults))
+ldist.igfs <-
+  mfdb_sample_count(mdb, 
+                    c('age', 'length'), 
+                    c(list(
+                      data_source = 'iceland-ldist',
+                      sampling_type = 'IGFS',
+                      age = mfdb_interval("all",c(minage,maxage),
+                                       open_ended = c("upper","lower")),
+                      length = mfdb_interval("len", 
+                                             seq(minlength, maxlength, by = dl),
+                                             open_ended = c("upper","lower"))),
+                      defaults))
 
-for(i in seq_along(ldist.igfs)){
-  attributes(ldist.igfs[[i]])$age$all <- minage:maxage
-  attr(attributes(ldist.igfs[[i]])$length$len0,'min') <- minlength
-}
+# for(i in seq_along(ldist.igfs)){
+#   attributes(ldist.igfs[[i]])$age$all <- minage:maxage
+#   attr(attributes(ldist.igfs[[i]])$length$len0,'min') <- minlength
+# }
 
 
 ## Age IGFS
 aldist.igfs <-
-  mfdb_sample_count(mdb, c('age', 'length'),
+  mfdb_sample_count(mdb, 
+                    c('age', 'length'),
                     c(list(sampling_type = 'IGFS',
-                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage+1,
-                                                    open_ended = TRUE),
+                           data_source = 'iceland-aldist',
+                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage,
+                                                    open_ended = c("lower","upper")),
                            length = mfdb_interval("len", 
-                                                  c(0,seq(minlength+dl, maxlength, by = dl)),
-                                                  open_ended = TRUE)),
+                                                  seq(minlength, maxlength, by = dl),
+                                                  open_ended = c("upper","lower"))),
                       defaults))
-for(i in seq_along(aldist.igfs)){
-  attr(attributes(aldist.igfs[[i]])$length$len0,'min') <- minlength
-}
+# for(i in seq_along(aldist.igfs)){
+#   attr(attributes(aldist.igfs[[i]])$length$len0,'min') <- minlength
+# }
 
 matp.igfs <- 
   mfdb_sample_count(mdb, c('maturity_stage','age','length'),
@@ -39,35 +46,90 @@ matp.igfs <-
                            list(sampling_type='IGFS',
                                 age=mfdb_group(mat_ages=minage:maxage),
                                 length = mfdb_interval('len',
-                                                       seq(minlength+dl, maxlength, by = 2*dl),
-                                                       open_ended = TRUE),              
+                                                       seq(minlength, maxlength, by = 2*dl),
+                                                       open_ended = c('lower','upper')),              
                                 maturity_stage = mfdb_group(lingimm = 1, lingmat = 2:5))))
 
 
-ldist.comm <- 
-  mfdb_sample_count(mdb, c('age', 'length'), 
+
+
+ldist.lln <- 
+  mfdb_sample_count(mdb, 
+                    c('age', 'length'), 
                     c(list(
                       sampling_type = 'SEA',
-                      #    gear = c('LLN','HLN'),
+                      data_source = 'iceland-ldist',
+                      gear = c('LLN','HLN'),
+                      age = mfdb_interval("all",c(minage,maxage),
+                                          open_ended = c("upper","lower")),
                       length = mfdb_interval("len", 
-                                             c(0,seq(minlength+dl, maxlength, by = dl)),
-                                             open_ended = TRUE)),
+                                             seq(minlength, maxlength, by = dl),
+                                             open_ended = c("upper","lower"))),
                       defaults))
 
-for(i in seq_along(ldist.comm)){
-  attributes(ldist.comm[[i]])$age$all <- minage:maxage
-  attr(attributes(ldist.comm[[i]])$length$len0,'min') <- minlength
-}
 
-aldist.comm <-
+aldist.lln <-
+  mfdb_sample_count(mdb, 
+                    c('age', 'length'),
+                    c(list(sampling_type = 'SEA',
+                           data_source = 'iceland-aldist',
+                           gear = c('LLN','HLN'),
+                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage,
+                                                    open_ended = c("lower","upper")),
+                           length = mfdb_interval("len", 
+                                                  seq(minlength, maxlength, by = dl),
+                                                  open_ended = c("upper","lower"))),
+                      defaults))
+
+ldist.bmt <- 
+  mfdb_sample_count(mdb,
+                    c('age', 'length'), 
+                    c(list(
+                      sampling_type = 'SEA',
+                      data_source = 'iceland-ldist',
+                      gear=c('BMT','NPT','DSE','PSE','PGT','SHT'),
+                      age = mfdb_interval("all",c(minage,maxage),
+                                          open_ended = c("upper","lower")),
+                      length = mfdb_interval("len", 
+                                             seq(minlength, maxlength, by = dl),
+                                             open_ended = c("upper","lower"))),
+                      defaults))
+
+aldist.bmt <-
+  mfdb_sample_count(mdb, 
+                    c('age', 'length'),
+                    c(list(sampling_type = 'SEA',
+                           data_source = 'iceland-aldist',
+                           gear=c('BMT','NPT','DSE','PSE','PGT','SHT'),
+                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage,
+                                                    open_ended = c("lower","upper")),
+                           length = mfdb_interval("len", 
+                                                  seq(minlength, maxlength, by = dl),
+                                                  open_ended = c("upper","lower"))),
+                      defaults))
+
+ldist.gil <- 
+  mfdb_sample_count(mdb, c('age', 'length'), 
+                    c(list(
+                      data_source = 'iceland-ldist',
+                      sampling_type = 'SEA',
+                      gear='GIL',
+                      age = mfdb_interval("all",c(minage,maxage),
+                                          open_ended = c("upper","lower")),
+                      length = mfdb_interval("len", 
+                                             seq(minlength, maxlength, by = dl),
+                                             open_ended = c("upper","lower"))),
+                      defaults))
+
+
+aldist.gil <-
   mfdb_sample_count(mdb, c('age', 'length'),
                     c(list(sampling_type = 'SEA',
-                           #                             gear = c('LLN','HLN'),
-                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage+1,open_ended = TRUE),
-                           length = mfdb_interval("len", c(0,seq(minlength+dl, maxlength, by = dl)),
-                                                  open_ended = TRUE)),
+                           data_source = 'iceland-aldist',
+                           gear='GIL',
+                           age = mfdb_step_interval('age',by=1,from=minage,to=maxage,
+                                                    open_ended = c("lower","upper")),
+                           length = mfdb_interval("len", 
+                                                  seq(minlength, maxlength, by = dl),
+                                                  open_ended = c("upper","lower"))),
                       defaults))
-for(i in seq_along(aldist.comm)){
-  attr(attributes(aldist.comm[[i]])$length$len0,'min') <- minlength
-}
-
