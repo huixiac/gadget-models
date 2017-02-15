@@ -84,7 +84,7 @@ ling.imm <-
                                          step = 1,
                                          area = 1,
                                          age = .[[1]]$minage,
-                                         number = parse(text=sprintf('ling.rec.scalar*ling.rec.%s*ling.init.F',year)) %>% 
+                                         number = parse(text=sprintf('ling.rec.scalar*ling.rec.%s',year)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),
                                          mean = von_b_formula(age,linf='ling.Linf',k='ling.k',recl='ling.recl'),
@@ -113,7 +113,7 @@ ling.mat <-
   gadget_update('initialconditions',
                 normalparam = data_frame(age = .[[1]]$minage:.[[1]]$maxage,
                                          area = 1,
-                                         age.factor = parse(text=sprintf('exp(-1*lingmat.M*%1$s)*lingmat.init.%1$s',age)) %>% 
+                                         age.factor = parse(text=sprintf('exp(-1*lingmat.M*%1$s*ling.init.F)*lingmat.init.%1$s',age)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),
                                          area.factor = '#lingmat.init.scalar',

@@ -112,7 +112,7 @@ tusk.imm <-
                                          step = 1,
                                          area = 1,
                                          age = .[[1]]$minage,
-                                         number = parse(text=sprintf('%1$s.rec.scalar*%1$s.rec.%2$s*%1$s.init.F',species_name,year)) %>% 
+                                         number = parse(text=sprintf('%1$s.rec.scalar*%1$s.rec.%2$s',species_name,year)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),
                                          mean = von_b_formula(age,linf=sprintf('%s.Linf',species_name),

@@ -142,7 +142,7 @@ fadings,calc,trees,mindmap,shadows,decorations.text,patterns,positioning,shapes,
 \frametitle{Observational data}
 <<echo=FALSE,message=FALSE,warning=FALSE>>=
 library(tidyverse)
-load('../../03-three_fleets/WGTS/WGTS.Rdata')
+load('../../04-fixes/WGTS/WGTS.Rdata')
 fit <- out
 @
 \bi Survey indices from the Icelandic groundfish survey from 1984:

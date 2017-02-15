@@ -277,19 +277,18 @@ fit$sidat %>%
 
 \frame{
 \frametitle{Fit to data -- survey length distributions}
-<<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+<<echo=FALSE,fig.width=12, fig.height=6,warning=FALSE,message=FALSE,cache=TRUE>>=
 fit$catchdist.fleets %>% 
   filter(name=='ldist.igfs') %>% 
   ggplot(aes(lower,observed)) + geom_point(col='gray') + 
   geom_segment(aes(xend=lower,yend=0),col='grey') + 
   facet_wrap(~year) + theme_bw() + 
   geom_line(aes(y=predicted)) + #xlim(c(25,55)) + 
-  geom_label(x=50,y=0.12,aes(label=year)) + 
-  geom_text(x=140,y=0.07,angle=90,aes(label=paste0('n = ',round(total.catch)))) +
+  geom_label(x=70,y=0.065,aes(label=year),size=3) + 
+  geom_text(x=95,y=0.04,angle=90,aes(label=paste0('n = ',round(total.catch))),size=3) +
   theme(strip.background = element_blank(),strip.text=element_blank()) + 
-  xlab('Length') + ylab('Proportion')
-
-
+  xlab('Length') + ylab('Proportion') + 
+  theme(axis.text.y = element_blank())
 @
 
 }
@@ -297,7 +296,7 @@ fit$catchdist.fleets %>%
 
 \frame{
 \frametitle{Fit to data -- survey age distributions}
-<<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+<<echo=FALSE,fig.width=12, fig.height=6,warning=FALSE,message=FALSE,cache=TRUE>>=
 fit$catchdist.fleets %>% 
   dplyr::filter(name=='aldist.igfs') %>%
   dplyr::mutate(age=as.numeric(gsub('age','',age)), 
@@ -309,17 +308,18 @@ fit$catchdist.fleets %>%
   ggplot(aes(age,o)) + geom_point(col='gray') + 
   geom_segment(aes(xend=age,yend=0),col='grey') + facet_wrap(~year+step) + 
   theme_bw() + geom_line(aes(y=p)) + 
-  geom_label(x=5,y=0.4,aes(label=year)) +
-  geom_text(x=12,y=0.15,aes(label=paste0('n = ',total.catch))) +
+  geom_label(x=2,y=0.28,aes(label=year),size=3) +
+  geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
   theme(strip.background = element_blank(),strip.text=element_blank()) + 
-  xlab('Length') + ylab('Proportion')
+  xlab('Length') + ylab('Proportion') + 
+  theme(axis.text.y = element_blank())
 @
 
 }
 
 \frame{
 \frametitle{Fit to data -- survey growth data}
-<<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+<<echo=FALSE,fig.width=12, fig.height=6,warning=FALSE,message=FALSE,cache=TRUE>>=
 fit$catchdist.fleets %>% 
   filter(name=='aldist.igfs') %>% 
   group_by(year,step,age) %>% 
@@ -343,7 +343,7 @@ fit$catchdist.fleets %>%
   geom_line(aes(y=p.ml))  + geom_linerange(aes(ymax=o.upper,ymin=o.lower))+
   facet_wrap(~year+step) + 
   theme_bw() + xlab('Age') + ylab('Average length') +
-  geom_label(x=12,y=30,aes(label=year)) + 
+  geom_label(x=3,y=60,aes(label=year),size=3) + 
   theme(strip.background = element_blank(),strip.text=element_blank())
 @
 
