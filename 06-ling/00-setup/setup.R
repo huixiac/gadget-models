@@ -3,8 +3,8 @@ library(tidyverse)
 library(Rgadget)
 bootstrap <- FALSE
 ## Create a gadget directory, define some defaults to use with our queries below
-gd <- gadget_directory("06-ling/04-fixes")
-mdb<-mfdb('Iceland')#,db_params=list(host='hafgeimur.hafro.is'))
+gd <- gadget_directory("06-ling/07-age-after-1998")
+mdb<-mfdb('Iceland',db_params=list(host='hafgeimur.hafro.is'))
 
 year_range <- 1982:2016
 base_dir <- '06-ling'
@@ -46,11 +46,17 @@ source('06-ling/00-setup/setup-fleets.R')
 source('06-ling/00-setup/setup-model.R')
 source('06-ling/00-setup/setup-catchdistribution.R')
 source('06-ling/00-setup/setup-indices.R')
+
+## weird inconsistencies in Gadget
+aldist.igfs[[1]]$step <- 2
+ldist.igfs[[1]]$step <- 2
+matp.igfs[[1]]$step <- 2
 source('06-ling/00-setup/setup-likelihood.R')
 
 Sys.setenv(GADGET_WORKING_DIR=normalizePath(gd$dir))
 callGadget(l=1,i='params.in',p='params.init')
 
+source('06-ling/00-setup/setup-fixed_slope.R')
 if(FALSE){
   ## setting up model variants
   source('06-ling/00-setup/setup-est_slope.R')
@@ -67,3 +73,4 @@ if(bootstrap){
 file.copy(sprintf('%s/itterfitter.sh','06-ling/00-setup'),gd$dir)
 file.copy(sprintf('%s/run.R','06-ling/00-setup'),gd$dir)
 file.copy(sprintf('%s/optinfofile','06-ling/00-setup'),gd$dir)
+

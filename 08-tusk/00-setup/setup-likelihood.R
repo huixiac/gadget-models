@@ -1,3 +1,9 @@
+## weird inconsistencies in Gadget, recruitment occurs at the end of the timestep..
+aldist.igfs[[1]]$step <- 2
+ldist.igfs[[1]]$step <- 2
+matp.igfs[[1]]$step <- 2
+
+
 gadgetlikelihood('likelihood',gd$dir,missingOkay = TRUE) %>% 
   ## Write a penalty component to the likelihood file
   gadget_update("penalty",
@@ -21,13 +27,13 @@ gadgetlikelihood('likelihood',gd$dir,missingOkay = TRUE) %>%
   gadget_update("catchdistribution",
                 name = "aldist.igfs",
                 weight = 1,
-                data = aldist.igfs[[1]],
+                data = aldist.igfs[[1]] ,
                 fleetnames = c("igfs"),
                 stocknames =stock_names) %>% 
   gadget_update("stockdistribution",
                 name = "matp.igfs",
                 weight = 1,
-                data = matp.igfs[[1]],
+                data = matp.igfs[[1]] ,
                 fleetnames = c("igfs"),
                 stocknames =stock_names) %>% 
   gadget_update("catchdistribution",
@@ -85,17 +91,10 @@ gadgetlikelihood('likelihood',gd$dir,missingOkay = TRUE) %>%
                 slope=1,
                 stocknames = stock_names) %>% 
   gadget_update("surveyindices",
-                name = "si.70-80",
+                name = "si.70-110",
                 weight = 1,
                 data = igfs.SI3a[[1]],
                 fittype = 'fixedslopeloglinearfit',
                 slope=1,
-                stocknames = stock_names) %>% 
-  gadget_update("surveyindices",
-                name = "si.80-110",
-                weight = 1,
-                data = igfs.SI3b[[1]],
-                fittype = 'fixedslopeloglinearfit',
-                slope=1,
-                stocknames = stock_names) %>% 
+                stocknames = stock_names)  %>% 
   write.gadget.file(gd$dir)

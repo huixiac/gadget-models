@@ -2,7 +2,7 @@ library(mfdb)
 library(tidyverse)
 library(Rgadget)
 source('R/utils.R')
-bootstrap <- FALSE
+bootstrap <- TRUE
 ## Create a gadget directory, define some defaults to use with our queries below
 
 base_dir <- '08-tusk'
@@ -12,8 +12,8 @@ stock_names <- c(imm_stock,mat_stock)
 species_name <- 'tusk'
 
 
-gd <- gadget_directory(sprintf("%s/02-mod",base_dir))
-mdb<-mfdb('Iceland')#,db_params=list(host='hafgeimur.hafro.is'))
+gd <- gadget_directory(sprintf("%s/03-fixes",base_dir))
+mdb<-mfdb('Iceland',db_params=list(host='hafgeimur.hafro.is'))
 year_range <- 1982:2016
 
 reitmapping <- 

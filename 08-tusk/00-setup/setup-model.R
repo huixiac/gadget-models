@@ -84,7 +84,7 @@ tusk.imm <-
   gadget_update('initialconditions',
                 normalparam = data_frame(age = .[[1]]$minage:.[[1]]$maxage,
                                          area = 1,
-                                         age.factor = parse(text=sprintf('exp(-1*%2$s.M*%1$s*%3$s.init.F)*%2$s.init.%1$s',age,
+                                         age.factor = parse(text=sprintf('exp(-1*(%2$s.M+%3$s.init.F)*%1$s)*%2$s.init.%1$s',age,
                                                                          .[[1]]$stockname,species_name)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),   
@@ -144,7 +144,7 @@ tusk.mat <-
   gadget_update('initialconditions',
                 normalparam = data_frame(age = .[[1]]$minage:.[[1]]$maxage,
                                          area = 1,
-                                         age.factor = parse(text=sprintf('exp(-1*%2$s.M*%1$s*%3$s.init.F)*%2$s.init.%1$s',age,
+                                         age.factor = parse(text=sprintf('exp(-1*(%2$s.M+%3$s.init.F)*%1$s)*%2$s.init.%1$s',age,
                                                                          .[[1]]$stockname,species_name)) %>% 
                                            map(to.gadget.formulae) %>% 
                                            unlist(),   
@@ -179,7 +179,7 @@ read.gadget.parameters(sprintf('%s/params.out',gd$dir)) %>%
   init_guess('rec.[0-9]|init.[0-9]',1,0.001,100,1) %>%
   init_guess('recl',12,4,20,1) %>% 
   init_guess('rec.sd',5, 4, 20,1) %>% 
-  init_guess('Linf',110, 100, 160,0) %>% 
+  init_guess('Linf',110, 100, 160,1) %>% 
   init_guess('k$',90, 40, 100,1) %>% 
   init_guess('bbin',6, 1e-08, 100, 1) %>% 
   init_guess('alpha', 0.5,  0.01, 3, 1) %>% 
@@ -191,5 +191,5 @@ read.gadget.parameters(sprintf('%s/params.out',gd$dir)) %>%
   init_guess('init.scalar',200,1,300,1) %>% 
   init_guess('mat2',mat.l50$l50,0.75*mat.l50$l50,1.25*mat.l50$l50,1) %>% 
   init_guess('mat1',70,  10, 200, 1) %>% 
-  init_guess('init.F',0.4,0.1,1,0) %>% 
+  init_guess('init.F',0.4,0.1,1,1) %>% 
   write.gadget.parameters(.,file=sprintf('%s/params.in',gd$dir))
