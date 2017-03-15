@@ -47,9 +47,8 @@ gadgetfleet('Modelfiles/fleet',gd$dir,missingOkay = TRUE) %>%
                 suitability = 
                   paste0('\n',
                          paste(c('lingimm','lingmat'),
-                               'function','andersenfleet',
-                               '#ling.lln.p0',to.gadget.formulae(quote(log(180/ling.lln.lmode))),'#ling.lln.p2',
-                               '#ling.lln.p3','#ling.lln.p4','180',
+                               'function','exponentiall50',
+                               '#ling.lln.alpha','#ling.lln.l50',
                                collapse='\n')),
                 data = lln.landings[[1]]) %>% 
   gadget_update('totalfleet',
@@ -73,9 +72,11 @@ gadgetfleet('Modelfiles/fleet',gd$dir,missingOkay = TRUE) %>%
                 suitability = 
                   paste0('\n',
                          paste(c('lingimm','lingmat'),
-                               'function','andersenfleet',
-                               '#ling.lln.p0',to.gadget.formulae(quote(log(180/ling.lln.lmode))),'#ling.lln.p2',
-                               '#ling.lln.p3','#ling.lln.p4','180',
+                               'function','exponentiall50',
+                               '#ling.lln.alpha','#ling.lln.l50',
+                               #'function','andersenfleet',
+                               #'#ling.lln.p0',to.gadget.formulae(quote(log(180/ling.lln.lmode))),'#ling.lln.p2',
+                               #'#ling.lln.p3','#ling.lln.p4','180',
                                collapse='\n')),
                 data = foreign.landings[[1]]) %>% 
   write.gadget.file(gd$dir)

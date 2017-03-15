@@ -1,5 +1,10 @@
 ## all age reading before 1999 are omitted
 
+## weird inconsistencies in Gadget
+aldist.igfs[[1]]$step <- 2
+ldist.igfs[[1]]$step <- 2
+matp.igfs[[1]]$step <- 2
+
 
 gadgetlikelihood('likelihood',gd$dir,missingOkay = TRUE) %>% 
   ## Write a penalty component to the likelihood file
@@ -33,7 +38,7 @@ gadgetlikelihood('likelihood',gd$dir,missingOkay = TRUE) %>%
                 name = "ldist.lln",
                 weight = 1,
                 data = ldist.lln[[1]] %>% ## tow == 60228 was wrongly assigned, omit samples from that quarter
-                  filter(year!=1993&step!=4),
+                  filter(!(year==1993&step==4)),
                 fleetnames = c("lln"),
                 stocknames = stock_names) %>% 
   gadget_update("catchdistribution",
@@ -99,30 +104,35 @@ gadgetlikelihood('likelihood',gd$dir,missingOkay = TRUE) %>%
                 name = "si.60-70",
                 weight = 1,
                 data = igfs.SI2b[[1]],
-                fittype = 'loglinearfit',
+                fittype = 'fixedslopeloglinearfit',
+                slope=1,
                 stocknames = stock_names) %>% 
-    gadget_update("surveyindices",
+  gadget_update("surveyindices",
                 name = "si.70-80",
                 weight = 1,
                 data = igfs.SI3a[[1]],
-                fittype = 'loglinearfit',
+                fittype = 'fixedslopeloglinearfit',
+                slope=1,
                 stocknames = stock_names) %>% 
   gadget_update("surveyindices",
                 name = "si.80-90",
                 weight = 1,
                 data = igfs.SI3b[[1]],
-                fittype = 'loglinearfit',
+                fittype = 'fixedslopeloglinearfit',
+                slope=1,
                 stocknames = stock_names) %>% 
   gadget_update("surveyindices",
                 name = "si.90-100",
                 weight = 1,
                 data = igfs.SI3c[[1]],
-                fittype = 'loglinearfit',
+                fittype = 'fixedslopeloglinearfit',
+                slope=1,
                 stocknames = stock_names) %>% 
   gadget_update("surveyindices",
                 name = "si.100-160",
                 weight = 1,
                 data = igfs.SI3d[[1]],
-                fittype = 'loglinearfit',
+                fittype = 'fixedslopeloglinearfit',
+                slope=1,
                 stocknames = stock_names) %>% 
   write.gadget.file(gd$dir)

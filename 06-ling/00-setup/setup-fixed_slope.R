@@ -4,15 +4,13 @@ gadgetlikelihood('likelihood',fixed_slope) %>%
                 name = "si.20-50",
                 weight = 1,
                 data = igfs.SI1[[1]],
-                fittype = 'fixedslopeloglinearfit',
-                slope=1,
+                fittype = 'loglinearfit',
                 stocknames = stock_names) %>% 
   gadget_update("surveyindices",
                 name = "si.50-60",
                 weight = 1,
                 data = igfs.SI2a[[1]],
-                fittype = 'fixedslopeloglinearfit',
-                slope=1,
+                fittype = 'loglinearfit',
                 stocknames = stock_names) %>% 
   gadget_update("surveyindices",
                 name = "si.60-70",
