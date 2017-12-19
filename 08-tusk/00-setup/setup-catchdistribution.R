@@ -35,13 +35,15 @@ aldist.igfs <-
 matp.igfs <- 
   mfdb_sample_count(mdb, c('maturity_stage','age','length'),
                     append(defaults,
-                           list(sampling_type='IGFS',
-                                age=mfdb_group(mat_ages=minage:maxage),
-                                length = mfdb_interval('len',
-                                                       seq(minlength, maxlength, by = 2*dl),
-                                                       open_ended = 'upper'),              
-                                maturity_stage = mfdb_group(tuskimm = 1, tuskmat = 2:5))))
+                    list(sampling_type='IGFS',
+                         length = mfdb_interval('len',
+                                                seq(minlength, maxlength, by = 2*dl),
+                                                open_ended = 'upper'),              
+                         maturity_stage = mfdb_group(tuskimm = 1, tuskmat = 2:5))))
 
+for(i in seq_along(matp.igfs)){
+  attributes(matp.igfs[[i]])$age$all <- minage:maxage
+}
 
 ## setup new catchdistribution likelihoodsldist.comm <- 
 ldist.comm <- 
@@ -64,8 +66,7 @@ aldist.comm <-
                     c(list(
                       data_source = 'iceland-aldist',
                       sampling_type = 'SEA',
-                      age = mfdb_interval('age',c(minage:10,maxage),
-                                          open_ended = c('upper')),
+                      age = mfdb_interval('age',c(minage:10,maxage),open_ended = c('upper')),
                       length = mfdb_interval("len", 
                                              seq(minlength, maxlength, by = dl),
                                              open_ended = c("upper","lower"))),

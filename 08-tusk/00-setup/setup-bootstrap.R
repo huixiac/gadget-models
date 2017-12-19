@@ -8,7 +8,7 @@ source(sprintf('%s/00-setup/setup-catchdistribution.R',base_dir))
 source(sprintf('%s/00-setup/setup-indices.R',base_dir))
 save.image(file=sprintf('%s/00-setup/bootstrap-data.Rdata',base_dir))
 
-for(i in seq_along(defaults$area))  {
+boot_setup <- function(i){
   var_dir <- gadget.variant.dir(gd$dir, variant_dir = paste0('BS.WGTS/BS.', i))
   
   aldist.igfs[[i]]$step <- 2
@@ -98,4 +98,10 @@ for(i in seq_along(defaults$area))  {
   attr(tmp,'file_config')$mainfile_overwrite = TRUE
   write.gadget.file(tmp,var_dir)
 }
+
+tmp <- 
+  mclapply(seq_along(defaults$area),
+           boot_setup,
+           mc.cores = detectCores(logical = TRUE))
+    
 
