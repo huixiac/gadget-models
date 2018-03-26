@@ -12,9 +12,10 @@ stock_names <- c(imm_stock,mat_stock)
 species_name <- 'tusk'
 
 
-gd <- gadget_directory(sprintf("%s/xx-prufa",base_dir))
-mdb<-mfdb('Iceland',db_params=list(host='hafgeimur.hafro.is'))
-year_range <- 1982:2017
+gd <- gadget_directory(sprintf("%s/01-new_ass",base_dir))
+#gd <- gadget_directory(sprintf("%s/xx-prufa",base_dir))
+mdb<-mfdb('Iceland')#,db_params=list(host='hafgeimur.hafro.is'))
+year_range <- 1982:2018
 
 reitmapping <- 
   read.table(
