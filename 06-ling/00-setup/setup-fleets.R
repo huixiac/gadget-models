@@ -28,7 +28,7 @@ foreign.landings <-
                             defaults))
 
 igfs.landings <- 
-  structure(data.frame(year=defaults$year,step=1,area=1,number=1),
+  structure(data.frame(year=defaults$year,step=2,area=1,number=1),
             area_group = mfdb_group(`1` = 1))
 
 
@@ -44,11 +44,12 @@ gadgetfleet('Modelfiles/fleet',gd$dir,missingOkay = TRUE) %>%
                 data = igfs.landings) %>%
   gadget_update('totalfleet',
                 name = 'lln',
-                suitability = paste0('\n',
-                                     paste(c('lingimm','lingmat'),
-                                           'function','exponentiall50',
-                                           '#ling.lln.alpha','#ling.lln.l50',
-                                           collapse='\n')),
+                suitability = 
+                  paste0('\n',
+                         paste(c('lingimm','lingmat'),
+                               'function','exponentiall50',
+                               '#ling.lln.alpha','#ling.lln.l50',
+                               collapse='\n')),
                 data = lln.landings[[1]]) %>% 
   gadget_update('totalfleet',
                 name = 'bmt',
@@ -68,10 +69,14 @@ gadgetfleet('Modelfiles/fleet',gd$dir,missingOkay = TRUE) %>%
                 data = gil.landings[[1]]) %>% 
   gadget_update('totalfleet',
                 name = 'foreign',
-                suitability = paste0('\n',
-                                     paste(c('lingimm','lingmat'),
-                                           'function','exponentiall50',
-                                           '#ling.lln.alpha','#ling.lln.l50',
-                                           collapse='\n')),
+                suitability = 
+                  paste0('\n',
+                         paste(c('lingimm','lingmat'),
+                               'function','exponentiall50',
+                               '#ling.lln.alpha','#ling.lln.l50',
+                               #'function','andersenfleet',
+                               #'#ling.lln.p0',to.gadget.formulae(quote(log(180/ling.lln.lmode))),'#ling.lln.p2',
+                               #'#ling.lln.p3','#ling.lln.p4','180',
+                               collapse='\n')),
                 data = foreign.landings[[1]]) %>% 
   write.gadget.file(gd$dir)

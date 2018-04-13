@@ -179,8 +179,8 @@ read.gadget.parameters(sprintf('%s/params.out',gd$dir)) %>%
   init_guess('rec.[0-9]|init.[0-9]',1,0.001,100,1) %>%
   init_guess('recl',12,4,20,1) %>% 
   init_guess('rec.sd',5, 4, 20,1) %>% 
-  init_guess('Linf',110, 100, 160,1) %>% 
-  init_guess('k$',90, 40, 100,1) %>% 
+  init_guess('Linf',110, 100, 120,1) %>% 
+  init_guess('k$',70, 60,80,1) %>% 
   init_guess('bbin',6, 1e-08, 100, 1) %>% 
   init_guess('alpha', 0.5,  0.01, 3, 1) %>% 
   init_guess('l50',50,10,100,1) %>% 

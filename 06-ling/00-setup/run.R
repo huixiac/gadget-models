@@ -6,8 +6,11 @@ tmp <- gadget.iterative(rew.sI=TRUE,
                                               'si.100-160'),
                                       comm=c('ldist.gil','ldist.bmt',
                                              'aldist.gil','aldist.bmt')),
-                        cv.floor = 0.05,
+                        #cv.floor = 0.05,
                         params.file = 'params.init',
                         wgts='WGTS')
 
+print('Running analytical retro')
+
+try(gadget.retro(mainfile = 'WGTS/main.final',params.file = 'params.init'), silent = T)
 

@@ -12,7 +12,7 @@ foreign.landings <-
                             defaults))
 
 igfs.landings <- 
-  structure(data.frame(year=defaults$year,step=1,area=1,number=1),
+  structure(data.frame(year=defaults$year,step=2,area=1,number=1),
             area_group = mfdb_group(`1` = 1))
 
 

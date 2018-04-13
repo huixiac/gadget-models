@@ -3,10 +3,10 @@ library(tidyverse)
 library(Rgadget)
 bootstrap <- FALSE
 ## Create a gadget directory, define some defaults to use with our queries below
-gd <- gadget_directory("06-ling/04-fixes")
+gd <- gadget_directory("06-ling/12-new_ass")
 mdb<-mfdb('Iceland')#,db_params=list(host='hafgeimur.hafro.is'))
 
-year_range <- 1982:2016
+year_range <- 1982:2018
 base_dir <- '06-ling'
 mat_stock <- 'lingmat'
 imm_stock <- 'lingimm'
@@ -52,6 +52,7 @@ Sys.setenv(GADGET_WORKING_DIR=normalizePath(gd$dir))
 callGadget(l=1,i='params.in',p='params.init')
 
 if(FALSE){
+  source('06-ling/00-setup/setup-fixed_slope.R')
   ## setting up model variants
   source('06-ling/00-setup/setup-est_slope.R')
   #source('06-ling/00-setup/setup-three_fleets.R')
@@ -67,3 +68,4 @@ if(bootstrap){
 file.copy(sprintf('%s/itterfitter.sh','06-ling/00-setup'),gd$dir)
 file.copy(sprintf('%s/run.R','06-ling/00-setup'),gd$dir)
 file.copy(sprintf('%s/optinfofile','06-ling/00-setup'),gd$dir)
+file.copy(sprintf('%s/run-fixed_slope.R','06-ling/00-setup'),gd$dir)
