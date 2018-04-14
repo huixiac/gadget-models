@@ -185,6 +185,14 @@ landings_by_country <-
   mutate(c=round(c)) %>% 
   spread(country,c,fill = '')
 
+## landings by nation
+landings_by_country_csv <- 
+  landings %>% 
+  #  filter(year>1978 & year < tyr) %>% 
+  filter(year>tyr-19 & year < tyr) %>% 
+  mutate(c=round(c)) #%>% 
+  #spread(country,c,fill = '')
+
 ## number of boats and landings by gear 
 nb_lnd_by_yr <- 
   lods_oslaegt(mar) %>% 
@@ -634,6 +642,7 @@ transfer_plot <-
                            ifelse(col=='tilf','Between species',
                                   'Between species (%)')))) %>% 
   filter(!(timabil %in% c('2001/02', '2016/17'))) %>% 
+#  filter(!(timabil %in% c('2001/02'))) %>% 
   ggplot(aes(timabil,value)) + geom_bar(stat='identity') + 
   facet_wrap(~col,ncol=2,scale='free_y') + 
   theme_light() +
@@ -641,82 +650,114 @@ transfer_plot <-
   labs(x='Quota period',y='Transfers (in t)')
 
 
-if(marteg==19){
-pdf('/home/pamela/Documents/Hafro/fishvice/19-GSS/depths.pdf', width = 8, height = 6)
-  depth_plot + 
-    depth_fill_plot + 
-    plot_layout(ncol = 1)
-dev.off()
-  
-pdf('/home/pamela/Documents/Hafro/fishvice/19-GSS/landingsbygear.pdf', width = 8, height = 6)
-lnd_by_gear_top + 
-  lnd_by_gear_bottom + 
-  plot_layout(ncol = 1)
-dev.off()
-
-pdf('/home/pamela/Documents/Hafro/fishvice/19-GSS/catchdist.pdf', width = 6, height = 6)
-catch_dist_plot
-dev.off()
-
-pdf('/home/pamela/Documents/Hafro/fishvice/19-GSS/catchregions.pdf', width = 6, height = 6)
-catch_by_area 
-vp <- grid::viewport(width = 0.4, height = 0.35, x = 0.24, y = 0.8)
-print(region.plot,vp = vp)
-dev.off()
+#creates four_plot
+if(marteg==6){source('/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/pre/01-indices4plot.R')} 
+if(marteg==8){source('/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/pre/01-indices4plot_orig.R')}
 
 
+#########Begin exports for reports###########
+
+###First two items for GSS but don't work when within if statements
+
+library(Logbooks)
+ass.yr <- thisyear
+gss.M50<-NULL
+for(i in 1997:(ass.yr-1)){
+  tmp<-botnv[botnv$ar==i,]
+  tmp$hl<-tmp$gulllax/tmp$total
+  tmp<-tmp[tmp$gulllax>0,]
+  #k<-tmp[tmp$hl>=0.75,]
+  #k<-tmp[tmp$hl<0.5 & tmp$hl>=0.1,]
+  k<-tmp[tmp$hl<0.75 & tmp$hl>0.5,]
+  j<-k[,c("gulllax","karfi","djupkarfi","graluda","langa","blalanga","total")]
+  summa<-apply(j,2,sum, na.rm=T)
+  Summa<-c(yr=i,summa, annad=summa[7]-sum(summa[1:6]))
+  gss.M50<-rbind(gss.M50,Summa)
 }
+k<-gss.M50[,c("yr","karfi","djupkarfi","graluda","langa","blalanga","annad.total")]
+kk<-cbind(yr=1997:(ass.yr-1),
+          round((k[,2:7]/matrix(rep(apply(k[,2:7],1,sum),6), ncol=6,byrow=F)*100),1))
+#write.table(kk, paste0(pathlist[[marteg]], "OtherCatch50-75.tex", sep=""), row.names=FALSE,
+#            col.names=FALSE, quote=FALSE, sep='&\t',eol='\\\\\n')
+
+write.csv(kk, paste0(pathlist[[19]], "OtherCatch50-75.csv"), row.names=FALSE)
+
+###### Biomass indices #####
+load('/net/hafkaldi/export/u2/reikn/Tac/2018/19-GSS/Rwork/gulllaxind.RData')
+dat <- subset(gulllax.NewStr,sv %in% c('d400','total','shallow') & lengd == 10)
+dat <- mutate(dat,bio.st=bio.st/1e3,xpos=ifelse(winsor,ar+0.1,ar),
+              sv=ifelse(sv=='total','Total',
+                        ifelse(sv=='d400','>400','<400')),
+              winsor=ifelse(winsor,'Winsorised','Un-altered'))
+dat.gullax <- dat
+#postscript("tmp.eps", horizontal = TRUE)
+#print(
+pdf(paste0(pathlist[[19]],'GSS_Index.pdf'), width = 6, height = 5) 
+  ggplot(dat,
+       aes(xpos,bio.st,col=winsor)) +
+  geom_line() + facet_wrap(~sv,ncol=2,scale='free_y') + theme_bw() +
+  theme(legend.position=c(0.6,0.2),legend.title=element_blank()) + geom_point(size=2) +
+  geom_errorbar(aes(ymin=bio.st*(1-cv.bio.st),ymax=bio.st*(1+cv.bio.st))) +
+  ylab("Index (in '000)") + xlab('Year') +
+  geom_line(data=subset(dat,ar %in% c(2010,2012) & winsor == 'Winsorised'),col='white',lty=2) +
+  geom_line(data=subset(dat,ar %in% c(2010,2012) & winsor == 'Un-altered'),col='white',lty=2) %>% 
+    print(.)
+
+#)
+dev.off()
+
+#system(paste("cp tmp.eps ", path,"SSmeltIndex.eps",sep=""))
+#system(paste("convert -verbose -density 300 tmp.eps -quality 92 -rotate 90  tmp.jpg", sep=""))
+#system(paste("cp tmp.jpg ", path,"SSmeltIndex.jpg",sep=""))
+
+#######
 
 
-if(marteg %in% c(6,8)){
-  
+
   write.csv(landings, paste0(pathlist[[marteg]], 'landings.csv'), row.names = F)
-  write.csv(landings_by_country, paste0(pathlist[[marteg]], 'landings_by_country.csv'), row.names = F)
+  write.csv(landings_by_country_csv, paste0(pathlist[[marteg]], 'landings_by_country.csv'), row.names = F)
   write.csv(nb_lnd_by_yr, paste0(pathlist[[marteg]], 'nb_lnd_by_yr.csv'), row.names = F)
   write.csv(lnd_by_gear, paste0(pathlist[[marteg]], 'lnd_by_gear.csv'), row.names = F)
   write.csv(sampling_lengths, paste0(pathlist[[marteg]], 'sampling_lengths.csv'), row.names = F)
   write.csv(sampling_ages, paste0(pathlist[[marteg]], 'sampling_ages.csv'), row.names = F)
 
+  closeAllConnections()
+  
   pdf(paste0(pathlist[[marteg]], 'landings_plot.pdf'), width = 6, height = 6)
-    landings.plot
+    print(landings.plot)
   dev.off()
 
   pdf(paste0(pathlist[[marteg]], 'lnd_by_gear.pdf'), width = 8, height = 6)
-  lnd_by_gear_top +
+  print(lnd_by_gear_top +
     lnd_by_gear_bottom +
-    plot_layout(ncol = 1)
+    plot_layout(ncol = 1))
   dev.off()
 
   pdf(paste0(pathlist[[marteg]], 'depth_plot.pdf'), width = 8, height = 6)
-  depth_plot +
+  print(depth_plot +
     depth_fill_plot +
-    plot_layout(ncol = 1)
+    plot_layout(ncol = 1))
   dev.off()
 
   pdf(paste0(pathlist[[marteg]], 'catch_dist_plot.pdf'), width = 6, height = 6)
-    catch_dist_plot
-  dev.off()
-
-  pdf(paste0(pathlist[[marteg]], 'catch_by_area.pdf'), width = 6, height = 6)
-    catch_by_area
-    vp <- grid::viewport(width = 0.4, height = 0.35, x = 0.24, y = 0.8)
-    print(region.plot,vp = vp)
+    print(catch_dist_plot)
   dev.off()
 
   pdf(paste0(pathlist[[marteg]], 'sampling_pos.pdf'), width = 6, height = 6)
-    sampling_pos_plot
+    print(sampling_pos_plot)
   dev.off()
 
   pdf(paste0(pathlist[[marteg]], 'transfer_plot.pdf'), width = 6, height = 6)
-    transfer_plot
+    print(transfer_plot)
   dev.off()
 
-  if(marteg %in% c(6,8)){
-    pdf(paste0(pathlist[[marteg]], 'four_plot.pdf'), width = 6, height = 6)
-    four_plot
-    dev.off()
-  }
-  
-}
+  pdf(paste0(pathlist[[marteg]], 'four_plot.pdf'), width = 6, height = 6)
+    print(four_plot)
+  dev.off()
 
+pdf(paste0(pathlist[[marteg]], 'catch_by_area.pdf'), width = 6, height = 6)
+  catch_by_area
+  vp <- grid::viewport(width = 0.4, height = 0.35, x = 0.24, y = 0.8)
+  print(region.plot,vp = vp)
+dev.off()
 
