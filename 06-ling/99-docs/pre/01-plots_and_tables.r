@@ -24,7 +24,22 @@ foreign_missing<-
   filter(Year %in% c(2011,2012,2013), species==marteg) %>% 
   select(year = Year, country = Country, c = Catch) %>% 
   mutate(country = ifelse(country=='Faroes', 'Faroe Islands', country)) 
+
+tusk14<-    
+  read.csv('/home/pamela/Documents/Hafro/fishvice/gadget-models/08-tusk/99-docs/pre/usk.27.5a14_section14_foreignlandings.csv') %>% 
+              gather(key = country, value = c, -Year) %>% 
+              mutate(section = '14') %>% 
+              rename(year = Year) %>% 
+  bind_rows(
+        read.csv('/home/pamela/Documents/Hafro/fishvice/gadget-models/08-tusk/99-docs/pre/ICES_preliminarycatch_tusk2017.csv') %>% 
+        filter(grepl('27_14', Area)) %>% 
+        group_by(Year) %>% 
+          summarise(c = sum(AMS.Catch.TLW.)/1000) %>%
+          mutate(year = Year, country = 'all', section = '14')
+          )
+              
     
+
 
 mar <- connect_mar()
 tyr <- thisyear
@@ -118,6 +133,8 @@ if(FALSE){
   
 }
 
+
+
 ## landings data by country  
 landings <- 
   tbl(mar,'lices') %>% 
@@ -160,11 +177,22 @@ landings <-
             filter(!(country %in% c('Total', 'Iceland')))) %>% 
   filter(year < tyr,c>0) %>% 
   group_by(year,country) %>% 
-  summarise(c=sum(c))
+  summarise(c=sum(c)) %>% 
+  mutate(section = '5a')
+
+if(marteg==8){
+  landings <-
+    landings %>%
+    bind_rows(tusk14) 
+} else {
+  landings <-
+    landings %>% 
+    bind_rows(data.frame(year = 2000, country = 'Iceland', c = 0, section = '14'))
+}
 
 ## catch history plot
 landings.plot <- 
-  landings %>% 
+  landings %>%
   mutate(country = ifelse(ifelse(is.na(country),' ',country)=='Iceland','Iceland','Other nations')) %>%
   group_by(year,country) %>% 
   summarise(c=sum(c)) %>% 
@@ -177,6 +205,25 @@ landings.plot <-
         legend.position = c(0.15,0.75)) + 
   scale_fill_manual(values=c('lightblue','darkblue'))
 
+## catch history plot
+landings.plot.tusk <- 
+  landings %>%
+  mutate(country = ifelse(section == 14, '14', country), country = ifelse(ifelse(is.na(country),' ',country)=='Iceland','Iceland in 5a',
+                                                                          ifelse(country=='14', 'All nations in 14', 'Other nations in 5a'))) %>%
+  mutate(country = ifelse(is.na(country), '', country)) %>% 
+  group_by(year,country) %>% 
+  summarise(c=sum(c)) %>% 
+  arrange(desc(country)) %>%
+  ggplot(aes(year,c/1e3,fill=country)) + 
+  geom_bar(stat='identity') + 
+  theme_bw() + 
+  labs(y = 'Landings (in kt)', x = 'Year', fill = '') + 
+  theme(legend.background = element_blank(),
+        legend.position = c(0.15,0.75)) + 
+  scale_fill_manual(values=c('white','orange', 'lightblue','darkblue'))
+
+
+
 ## landings by nation
 landings_by_country <- 
   landings %>% 
@@ -186,12 +233,12 @@ landings_by_country <-
   spread(country,c,fill = '')
 
 ## landings by nation
-landings_by_country_csv <- 
-  landings %>% 
-  #  filter(year>1978 & year < tyr) %>% 
-  filter(year>tyr-19 & year < tyr) %>% 
-  mutate(c=round(c)) #%>% 
-  #spread(country,c,fill = '')
+# landings_by_country_csv <- 
+#   landings %>% 
+#   #  filter(year>1978 & year < tyr) %>% 
+#   filter(year>tyr-19 & year < tyr) %>% 
+#   mutate(c=round(c)) #%>% 
+#   #spread(country,c,fill = '')
 
 ## number of boats and landings by gear 
 nb_lnd_by_yr <- 
@@ -647,14 +694,134 @@ transfer_plot <-
   facet_wrap(~col,ncol=2,scale='free_y') + 
   theme_light() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  labs(x='Quota period',y='Transfers (in t)')
+  labs(x='Quota period',y='Transfers (in kt)')
 
 
 #creates four_plot
 if(marteg==6){source('/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/pre/01-indices4plot.R')} 
 if(marteg==8){source('/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/pre/01-indices4plot_orig.R')}
 
+#simple length and age distribution plots
+survey_age_dist <-
+  fit$catchdist.fleets %>% 
+  dplyr::filter(name %in% c('aldist.igfs','aldist.smb')) %>%
+  dplyr::ungroup() %>% 
+  dplyr::mutate(age=as.numeric(gsub('age','',age)), 
+                length=as.numeric(gsub('len','',length))) %>% 
+#  dplyr::group_by(year,age,step,total.catch) %>% 
+  dplyr::group_by(year,age,total.catch) %>% 
+  dplyr::summarise(o=sum(observed,na.rm=TRUE)) %>% #,
+  #                 p=sum(predicted)) %>% 
+  dplyr::mutate(o=ifelse(o==0,NA,o)) %>% 
+  ungroup() %>% 
+  ggplot(aes(age,o)) + geom_point(col='black') + 
+  geom_segment(aes(xend=age,yend=0),col='black') + 
+  #facet_wrap(~year+step) + 
+  facet_wrap(~year) + 
+  theme_bw() + #geom_line(aes(y=p)) + 
+  geom_label(x=5,y=0.2,aes(label=year),size=2) +
+  #geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
+  theme(strip.background = element_blank(),strip.text=element_blank()) + 
+  xlab('Age') + ylab('Proportion') + 
+  theme(axis.text.y = element_blank())
 
+survey_length_dist <-
+  fit$catchdist.fleets %>% 
+  dplyr::filter(name %in% c('ldist.igfs','ldist.smb')) %>%
+  dplyr::ungroup() %>% 
+  dplyr::mutate(
+                #age=as.numeric(gsub('age','',age)), 
+                length=as.numeric(gsub('len','',length))) %>% 
+  #  dplyr::group_by(year,age,step,total.catch) %>% 
+  dplyr::group_by(year,length,total.catch) %>% 
+  dplyr::summarise(o=sum(observed,na.rm=TRUE)) %>% #,
+  #                 p=sum(predicted)) %>% 
+  dplyr::mutate(o=ifelse(o==0,NA,o)) %>% 
+  ungroup() %>% 
+  ggplot(aes(length,o)) + geom_point(col='black') + 
+  geom_segment(aes(xend=length,yend=0),col='black') + 
+  #facet_wrap(~year+step) + 
+  facet_wrap(~year) + 
+  theme_bw() + #geom_line(aes(y=p)) + 
+  geom_label(x=90,y=0.05,aes(label=year),size=3) +
+  #geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
+  theme(strip.background = element_blank(),strip.text=element_blank()) + 
+  xlab('Length') + ylab('Proportion') + 
+  theme(axis.text.y = element_blank())
+
+#simple length and age distribution plots
+comm_age_dist_dat <-
+  fit$catchdist.fleets %>% 
+  dplyr::filter(name %in% c('aldist.bmt','aldist.lln', 'aldist.comm')) %>%
+  dplyr::ungroup() %>% 
+  dplyr::mutate(age=as.numeric(gsub('age','',age)), 
+                length=as.numeric(gsub('len','',length)),
+                comm = ifelse(name=='aldist.bmt', 'Bottom trawl', 'Longline')) %>% 
+  #  dplyr::group_by(year,age,step,total.catch) %>% 
+  dplyr::group_by(year,age,comm,total.catch) %>% 
+  dplyr::summarise(o=sum(observed,na.rm=TRUE)) %>% #,
+  #                 p=sum(predicted)) %>% 
+  dplyr::mutate(o=ifelse(o==0,NA,o)) %>% 
+  ungroup()
+
+comm_age_dist_dat_bmt<-
+  comm_age_dist_dat %>% filter(comm == 'Bottom trawl')
+
+comm_age_dist <-
+  comm_age_dist_dat  %>% 
+  filter(comm == 'Longline') %>% 
+  ggplot(aes(age,o)) + geom_point(col='black') + 
+  geom_segment(aes(xend=age,yend=0),col='black') + 
+# include below for ling
+#  geom_line(aes(age, o, data = comm_age_dist_dat %>% filter(comm=='Bottom trawls')) +
+  #facet_wrap(~year+step) + 
+  facet_wrap(~year) + 
+  theme_bw() + #geom_line(aes(y=p)) + 
+  geom_label(x=5,y=0.6,aes(label=year),size=3) +
+  #geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
+  theme(strip.background = element_blank(),strip.text=element_blank()) + 
+  xlab('Age') + ylab('Proportion') + 
+  theme(axis.text.y = element_blank())
+
+comm_length_dist <-
+  fit$catchdist.fleets %>% 
+  dplyr::filter(name %in% c('ldist.bmt','ldist.lln', 'ldist.comm')) %>%
+  dplyr::ungroup() %>% 
+  dplyr::mutate(
+    #age=as.numeric(gsub('age','',age)), 
+    length=as.numeric(gsub('len','',length)),
+    comm = ifelse(name=='aldist.bmt', 'Bottom trawl', 'Longline')) %>% 
+  #  dplyr::group_by(year,age,step,total.catch) %>% 
+  dplyr::group_by(year,length,total.catch) %>% 
+  dplyr::summarise(o=sum(observed,na.rm=TRUE)) %>% #,
+  #                 p=sum(predicted)) %>% 
+  dplyr::mutate(o=ifelse(o==0,NA,o)) %>% 
+  ungroup() %>% 
+  ggplot(aes(length,o)) + geom_point(col='black') + 
+  geom_segment(aes(xend=length,yend=0),col='black') + 
+  # include below for ling
+  #  geom_line(aes(age, o, data = comm_age_dist_dat %>% filter(comm=='Bottom trawls')) +
+  #facet_wrap(~year+step) + 
+  facet_wrap(~year) + 
+  theme_bw() + #geom_line(aes(y=p)) + 
+  geom_label(x=90,y=0.17, aes(label=year),size=2) +
+  #geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
+  theme(strip.background = element_blank(),strip.text=element_blank()) + 
+  xlab('Length') + ylab('Proportion') + 
+  theme(axis.text.y = element_blank())
+
+if(marteg==8){
+#number of samples 
+ fit$catchdist.fleets %>% 
+   filter(!(name %in% c('aldist.igfs','ldist.igfs','matp.igfs'))) %>% 
+   group_by(name,year) %>% 
+   dplyr::summarise(n=sum(number.x,na.rm=TRUE))
+
+ fit$catchdist.fleets %>% 
+   filter(!(name %in% c('aldist.comm','ldist.comm'))) %>% 
+   group_by(name,year) %>% 
+   dplyr::summarise(n=sum(number.x,na.rm=TRUE))
+ }
 #########Begin exports for reports###########
 
 ###First two items for GSS but don't work when within if statements
@@ -715,7 +882,7 @@ dev.off()
 
 
   write.csv(landings, paste0(pathlist[[marteg]], 'landings.csv'), row.names = F)
-  write.csv(landings_by_country_csv, paste0(pathlist[[marteg]], 'landings_by_country.csv'), row.names = F)
+  write.csv(landings_by_country, paste0(pathlist[[marteg]], 'landings_by_country.csv'), row.names = F)
   write.csv(nb_lnd_by_yr, paste0(pathlist[[marteg]], 'nb_lnd_by_yr.csv'), row.names = F)
   write.csv(lnd_by_gear, paste0(pathlist[[marteg]], 'lnd_by_gear.csv'), row.names = F)
   write.csv(sampling_lengths, paste0(pathlist[[marteg]], 'sampling_lengths.csv'), row.names = F)
@@ -726,7 +893,7 @@ dev.off()
   pdf(paste0(pathlist[[marteg]], 'landings_plot.pdf'), width = 6, height = 6)
     print(landings.plot)
   dev.off()
-
+  
   pdf(paste0(pathlist[[marteg]], 'lnd_by_gear.pdf'), width = 8, height = 6)
   print(lnd_by_gear_top +
     lnd_by_gear_bottom +
@@ -747,17 +914,39 @@ dev.off()
     print(sampling_pos_plot)
   dev.off()
 
-  pdf(paste0(pathlist[[marteg]], 'transfer_plot.pdf'), width = 6, height = 6)
+  pdf(paste0(pathlist[[marteg]], 'transfer_plot.pdf'), width = 8, height = 6)
     print(transfer_plot)
   dev.off()
 
-  pdf(paste0(pathlist[[marteg]], 'four_plot.pdf'), width = 6, height = 6)
+  pdf(paste0(pathlist[[marteg]], 'four_plot.pdf'), width = 8, height = 6)
     print(four_plot)
   dev.off()
 
-pdf(paste0(pathlist[[marteg]], 'catch_by_area.pdf'), width = 6, height = 6)
+pdf(paste0(pathlist[[marteg]], 'catch_by_area.pdf'), width = 8, height = 6)
   catch_by_area
   vp <- grid::viewport(width = 0.4, height = 0.35, x = 0.24, y = 0.8)
   print(region.plot,vp = vp)
 dev.off()
+
+pdf(paste0(pathlist[[marteg]], 'survey_age_dist.pdf'), width = 8, height =6)
+  print(survey_age_dist)
+dev.off()
+
+pdf(paste0(pathlist[[marteg]], 'survey_length_dist.pdf'), width = 8, height =6)
+  print(survey_length_dist)
+dev.off()
+
+pdf(paste0(pathlist[[marteg]], 'comm_age_dist.pdf'), width = 8, height =6)
+  print(comm_age_dist)
+dev.off()
+
+pdf(paste0(pathlist[[marteg]], 'comm_length_dist.pdf'), width = 8, height =6)
+  print(comm_length_dist)
+dev.off()
+
+if(marteg==8){
+pdf(paste0(pathlist[[marteg]], 'landings_plot.tusk.pdf'), width = 8, height = 6)
+  print(landings.plot.tusk)
+dev.off()
+}
 
