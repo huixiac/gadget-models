@@ -6,18 +6,19 @@ library(gridExtra)
 #devtools::install_github('einarhjorleifsson/gisland')
 library(gisland)
 #devtools::install_github('thomasp85/patchwork')
+#devtools::install_github('Hafro/geo')
 library(patchwork)
 #library(forcats)
 #this year and marteg defined in main .Rnw
 
 foreign_missing<-
-  read.csv('/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/pre/lin.27.5a_foreignlandings.csv') %>% 
+  read.csv('../../../06-ling/99-docs/pre/lin.27.5a_foreignlandings.csv') %>% 
   mutate(species = 6, Year = as.numeric(substring(Year,1,4))) %>%
   gather(key = Country, value = Catch, -c(Year,species)) %>% 
-  full_join(read.csv('/home/pamela/Documents/Hafro/fishvice/gadget-models/08-tusk/99-docs/pre/usk.27.5a14_foreignlandings.csv') %>%
+  full_join(read.csv('../../../08-tusk/99-docs/pre/usk.27.5a14_foreignlandings.csv') %>%
               mutate(species = 8, Year = as.numeric(substring(Year,1,4))) %>%
               gather(key = Country, value = Catch,  -c(Year,species)) %>% 
-              full_join(read.csv('/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/pre/bli.27.5a14_foreignlandings.csv') %>%
+              full_join(read.csv('../../../06-ling/99-docs/pre/bli.27.5a14_foreignlandings.csv') %>%
                           mutate(species = 7, Year = as.numeric(substring(Year,1,4))) %>%
                           gather(key = Country, value = Catch,  -c(Year,species)) 
               )) %>% 
@@ -26,20 +27,21 @@ foreign_missing<-
   mutate(country = ifelse(country=='Faroes', 'Faroe Islands', country)) 
 
 tusk14<-    
-  read.csv('/home/pamela/Documents/Hafro/fishvice/gadget-models/08-tusk/99-docs/pre/usk.27.5a14_section14_foreignlandings.csv') %>% 
+  read.csv('../../../08-tusk/99-docs/pre/usk.27.5a14_section14_foreignlandings.csv') %>% 
               gather(key = country, value = c, -Year) %>% 
               mutate(section = '14') %>% 
               rename(year = Year) %>% 
   bind_rows(
-        read.csv('/home/pamela/Documents/Hafro/fishvice/gadget-models/08-tusk/99-docs/pre/ICES_preliminarycatch_tusk2017.csv') %>% 
+        read.csv('../../../08-tusk/99-docs/pre/ICES_preliminarycatch_tusk2017.csv') %>% 
         filter(grepl('27_14', Area)) %>% 
         group_by(Year) %>% 
-          summarise(c = sum(AMS.Catch.TLW.)/1000) %>%
-          mutate(year = Year, country = 'all', section = '14')
+        #BELOW NEEDS TO BE CHECKED EVERY YEAR - CORRECTING FOR INCORRECT UNITS
+        mutate(corr = ifelse(Country %in% c('DE','NO'), 1, 1000)) %>% 
+        summarise(c = sum(AMS.Catch.TLW./corr)) %>% 
+        rename(year = 'Year') %>% 
+        mutate(country = 'all', section = '14')
           )
               
-    
-
 
 mar <- connect_mar()
 tyr <- thisyear
@@ -84,10 +86,10 @@ depthlist[[19]]<-c(401,501,601)
 depths<-depthlist[[marteg]]
 
 pathlist<-NULL
-pathlist[[19]]<-'/home/pamela/Documents/Hafro/fishvice/19-GSS/tech report/figs/'
-pathlist[[8]]<-'/home/pamela/Documents/Hafro/fishvice/gadget-models/08-tusk/99-docs/tech report/figs/'
-pathlist[[7]]<-'/home/pamela/Documents/Hafro/fishvice/gadget-models/'
-pathlist[[6]]<-'/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/tech report/figs/'
+pathlist[[19]]<-'../../../../19-GSS/tech report/figs/'
+pathlist[[8]]<-'../../../08-tusk/99-docs/tech report/figs/'
+pathlist[[7]]<-'../../../'
+pathlist[[6]]<-'../../../06-ling/99-docs/tech report/figs/'
 
 
 if(FALSE){
@@ -232,14 +234,6 @@ landings_by_country <-
   mutate(c=round(c)) %>% 
   spread(country,c,fill = '')
 
-## landings by nation
-# landings_by_country_csv <- 
-#   landings %>% 
-#   #  filter(year>1978 & year < tyr) %>% 
-#   filter(year>tyr-19 & year < tyr) %>% 
-#   mutate(c=round(c)) #%>% 
-#   #spread(country,c,fill = '')
-
 ## number of boats and landings by gear 
 nb_lnd_by_yr <- 
   lods_oslaegt(mar) %>% 
@@ -263,6 +257,27 @@ nb_lnd_by_yr <-
   select(Year=ar,starts_with('nb_'),starts_with('c_'),`Total catch`) %>% 
   select(-nb_Other) %>% 
   set_names(.,gsub('c_|nb_','',names(.))) 
+
+nb_land_gear_country <-
+  lods_oslaegt(mar) %>% 
+  filter(fteg == marteg,veidisvaedi == 'I',ar>1993) %>% 
+  left_join(lesa_skipaskra(mar)) %>% 
+  mutate(country = ifelse(nvl(flokkur,0) != -4,'Iceland',einkst)) %>% 
+  left_join(tbl(mar,'gear_mapping')) %>% 
+  mutate(gear = ifelse(country == 'Iceland', 
+                       ifelse(nvl(gear,' ') %in% imp_gears,gear, 'Other'),'Foreign')) %>% 
+  select(year = ar, gear, magn_oslaegt) %>% 
+  group_by(year,gear) %>% 
+  summarise(c=sum(magn_oslaegt,na.rm = TRUE)/1e3)%>% 
+  collect(n=Inf) %>%
+  mutate(gear = forcats::fct_recode(gear,
+                                    lina='LLN',
+                                    botnv='BMT',
+                                    annad='Other',
+                                    erl='Foreign',
+                                    net='GIL')) %>% 
+  spread(key = gear, value = c)
+
 
 ## plot landings in tons by gear and year
 lnd_by_gear <- 
@@ -525,7 +540,6 @@ catch_dist_plot <-
     strip.text.x = element_blank())
 
 ## position of samples from the catches
-
 sampling_pos <- 
   lesa_stodvar(mar) %>% 
   filter(ar == (tyr -1),synaflokkur %in% c(1,2,8)) %>% 
@@ -698,10 +712,10 @@ transfer_plot <-
 
 
 #creates four_plot
-if(marteg==6){source('/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/pre/01-indices4plot.R')} 
-if(marteg==8){source('/home/pamela/Documents/Hafro/fishvice/gadget-models/06-ling/99-docs/pre/01-indices4plot_orig.R')}
+if(marteg==6){source('../../../06-ling/99-docs/pre/01-indices4plot.R')} 
+if(marteg==8){source('../../../06-ling/99-docs/pre/01-indices4plot_orig.R')}
 
-#simple length and age distribution plots
+#simple length and age distribution plots - need to be by maturity and have means added to figure
 survey_age_dist <-
   fit$catchdist.fleets %>% 
   dplyr::filter(name %in% c('aldist.igfs','aldist.smb')) %>%
@@ -725,28 +739,113 @@ survey_age_dist <-
   xlab('Age') + ylab('Proportion') + 
   theme(axis.text.y = element_blank())
 
-survey_length_dist <-
+survey_length_dist_dat <-
   fit$catchdist.fleets %>% 
   dplyr::filter(name %in% c('ldist.igfs','ldist.smb')) %>%
   dplyr::ungroup() %>% 
   dplyr::mutate(
-                #age=as.numeric(gsub('age','',age)), 
-                length=as.numeric(gsub('len','',length))) %>% 
+                #age=as.numeric(gsub('age','',age)),
+                length=floor(as.numeric(gsub('len','',length))/4)*4
+                ) %>% 
+  select(year, name, length,  number.x) %>%
+  dplyr::group_by(year, length) %>% 
+  dplyr::summarise(num=sum(number.x,na.rm=TRUE)) %>% #,
+  #                 p=sum(predicted)) %>%
+  dplyr::left_join(  fit$catchdist.fleets %>% 
+                       dplyr::filter(name %in% c('ldist.igfs','ldist.smb')) %>%
+                       dplyr::ungroup() %>% 
+                       dplyr::mutate(length=as.numeric(gsub('len','',length))) %>% 
+                       dplyr::group_by(year) %>% 
+                       dplyr::summarise(ml = round(sum(length*number.y, na.rm = T)/sum(number.y, na.rm = T))) 
+                    ) %>% 
   #  dplyr::group_by(year,age,step,total.catch) %>% 
-  dplyr::group_by(year,length,total.catch) %>% 
-  dplyr::summarise(o=sum(observed,na.rm=TRUE)) %>% #,
-  #                 p=sum(predicted)) %>% 
-  dplyr::mutate(o=ifelse(o==0,NA,o)) %>% 
-  ungroup() %>% 
-  ggplot(aes(length,o)) + geom_point(col='black') + 
-  geom_segment(aes(xend=length,yend=0),col='black') + 
-  #facet_wrap(~year+step) + 
+  full_join( fit$stockdist %>% 
+               dplyr::filter(name %in% c('matp.igfs')) %>%
+               dplyr::mutate(length=lower) %>%
+               select(year, length, pred.ratio, stock) %>% 
+               bind_rows(data.frame(year = rep(rep(c(1986,1987,1988,1992,1993), each = length(seq(4,108,4))),2), 
+                                    length = rep(rep(seq(4,108,4), length(c(1986,1987,1988,1992,1993))),2), 
+                                    pred.ratio = rep(NA,2*length(c(1986,1987,1988,1992,1993))*length(seq(4,108,4))),
+                                    stock = rep(c('tuskimm','tuskmat'),
+                                                each = length(c(1986,1987,1988,1992,1993))*length(seq(4,108,4)))
+                                    )
+                        )
+            ) %>% 
+  left_join(fit$stockdist %>% 
+              dplyr::filter(name %in% c('matp.igfs')) %>%
+              dplyr::mutate(length = lower) %>% 
+              dplyr::group_by(length, stock) %>% 
+              dplyr::summarise(mean.pred.ratio = mean(pred.ratio, na.rm = T)) %>% 
+              dplyr::select(length, mean.pred.ratio, stock)) %>% 
+  mutate(pred.ratio = ifelse(is.na(pred.ratio), mean.pred.ratio, pred.ratio)) %>% 
+  dplyr::mutate(o_num=ifelse(num==0,NA,num)*pred.ratio)
+
+survey_length_dist<-
+  survey_length_dist_dat %>% 
+  filter(!is.na(stock)) %>% 
+  dplyr::group_by(year, length, stock) %>% 
+  left_join(survey_length_dist_dat %>% 
+              dplyr::group_by(year, stock) %>%
+              dplyr::summarise(sumnum = sum(o_num, na.rm = T))
+            ) %>% 
+  mutate(o = o_num/sumnum) %>%  
+  ggplot(aes(length,o, color = stock)) + geom_point(aes(color = stock)) + 
+  geom_segment(aes(xend=length,yend=0)) + 
   facet_wrap(~year) + 
   theme_bw() + #geom_line(aes(y=p)) + 
-  geom_label(x=90,y=0.05,aes(label=year),size=3) +
-  #geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
+  geom_label(x=90,y=0.2,aes(label=year),size=2, col = 'black') +
+  geom_label(x=90,y=0.15,aes(label=paste0('ML = ',ml)),size=2, col = 'black') +
   theme(strip.background = element_blank(),strip.text=element_blank()) + 
-  xlab('Length') + ylab('Proportion') + 
+  xlab('Length') + ylab('Survey index proportion') + 
+  theme(axis.text.y = element_blank())
+
+# ggplot(aes(length,o)) + geom_point(col='black') + 
+#   geom_segment(aes(xend=length,yend=0),col='black') + 
+#   #facet_wrap(~year+step) + 
+#   facet_wrap(~year) + 
+#   theme_bw() + #geom_line(aes(y=p)) + 
+#   geom_label(x=90,y=0.05,aes(label=year),size=3) +
+#   #geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
+#   theme(strip.background = element_blank(),strip.text=element_blank()) + 
+#   xlab('Length') + ylab('Proportion') + 
+#   theme(axis.text.y = element_blank())
+# 
+# survey_length_dist <-
+#   fit$stockdist %>% 
+#   dplyr::filter(name %in% c('matp.igfs')) %>%
+#   dplyr::ungroup() %>%
+#   left_join( fit$stockdist %>% 
+#                dplyr::filter(name %in% c('matp.igfs')) %>%
+#                group_by(year) %>% 
+#                dplyr::summarise(ml =round(sum(length*number.y, na.rm = T)/sum(number.y, na.rm = T)))
+#              ) %>% 
+#   ggplot(aes(length,number.y, color = stock)) + geom_point(aes(color = stock)) + 
+#   geom_segment(aes(xend=length,yend=0)) + 
+#   facet_wrap(~year) + 
+#   theme_bw() + #geom_line(aes(y=p)) + 
+#   geom_label(x=90,y=200,aes(label=year),size=3, col = 'black') +
+#   geom_label(x=90,y=130,aes(label=paste0('ML = ',ml)),size=2, col = 'black') +
+#   theme(strip.background = element_blank(),strip.text=element_blank()) + 
+#   xlab('Length') + ylab('Number') + 
+#   theme(axis.text.y = element_blank())
+
+survey_age_dist <-
+  fit$stockdist %>% 
+#  dplyr::filter(name %in% c('matp.igfs')) %>%
+  dplyr::ungroup() %>%
+  left_join( fit$stock.std %>% 
+               #dplyr::filter(name %in% c('matp.igfs')) %>%
+               group_by(year) %>% 
+               dplyr::summarise(ma =round(sum(age*number, na.rm = T)/sum(number, na.rm = T)))
+  ) %>% 
+  ggplot(aes(age,number, color = stock)) + geom_point(aes(color = stock)) + 
+  geom_segment(aes(xend=age,yend=0)) + 
+  facet_wrap(~year) + 
+  theme_bw() + #geom_line(aes(y=p)) + 
+  geom_label(x=9,y=200,aes(label=year),size=3, col = 'black') +
+  geom_label(x=9,y=130,aes(label=paste0('MA = ',ma)),size=2, col = 'black') +
+  theme(strip.background = element_blank(),strip.text=element_blank()) + 
+  xlab('Age') + ylab('Number') + 
   theme(axis.text.y = element_blank())
 
 #simple length and age distribution plots
@@ -755,13 +854,24 @@ comm_age_dist_dat <-
   dplyr::filter(name %in% c('aldist.bmt','aldist.lln', 'aldist.comm')) %>%
   dplyr::ungroup() %>% 
   dplyr::mutate(age=as.numeric(gsub('age','',age)), 
-                length=as.numeric(gsub('len','',length)),
-                comm = ifelse(name=='aldist.bmt', 'Bottom trawl', 'Longline')) %>% 
+                length=floor(as.numeric(gsub('len','',length))/4)*4,
+                comm = ifelse(name=='aldist.bmt', 'Bottom trawl', 'Longline'),
+                num = observed*total.catch
+                ) %>% 
   #  dplyr::group_by(year,age,step,total.catch) %>% 
-  dplyr::group_by(year,age,comm,total.catch) %>% 
-  dplyr::summarise(o=sum(observed,na.rm=TRUE)) %>% #,
-  #                 p=sum(predicted)) %>% 
-  dplyr::mutate(o=ifelse(o==0,NA,o)) %>% 
+  dplyr::group_by(year,age,comm) %>% 
+  dplyr::summarise(sumnum=sum(num,na.rm=TRUE)) %>% #,
+  #                 p=sum(predicted)) %>%
+  dplyr::left_join(fit$catchdist.fleets %>% 
+                     dplyr::filter(name %in% c('aldist.bmt','aldist.lln', 'aldist.comm')) %>% 
+                     dplyr::ungroup() %>% 
+                     dplyr::mutate(comm = ifelse(name=='aldist.bmt', 'Bottom trawl', 'Longline'),
+                                   num = observed*total.catch
+                                  ) %>% 
+                    dplyr::group_by(year, comm) %>% 
+                    dplyr::summarise(annual.total.catch=sum(num, na.rm=T))
+                   ) %>% 
+  dplyr::mutate(o=ifelse(sumnum==0,NA,sumnum)/annual.total.catch) %>% 
   ungroup()
 
 comm_age_dist_dat_bmt<-
@@ -777,7 +887,7 @@ comm_age_dist <-
   #facet_wrap(~year+step) + 
   facet_wrap(~year) + 
   theme_bw() + #geom_line(aes(y=p)) + 
-  geom_label(x=5,y=0.6,aes(label=year),size=3) +
+  geom_label(x=8,y=0.6,aes(label=year),size=4) +
   #geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
   theme(strip.background = element_blank(),strip.text=element_blank()) + 
   xlab('Age') + ylab('Proportion') + 
@@ -789,13 +899,20 @@ comm_length_dist <-
   dplyr::ungroup() %>% 
   dplyr::mutate(
     #age=as.numeric(gsub('age','',age)), 
-    length=as.numeric(gsub('len','',length)),
-    comm = ifelse(name=='aldist.bmt', 'Bottom trawl', 'Longline')) %>% 
+    length=floor(as.numeric(gsub('len','',length))/4)*4,
+    comm = ifelse(name=='aldist.bmt', 'Bottom trawl', 'Longline'),
+    num = observed*total.catch) %>% 
   #  dplyr::group_by(year,age,step,total.catch) %>% 
-  dplyr::group_by(year,length,total.catch) %>% 
-  dplyr::summarise(o=sum(observed,na.rm=TRUE)) %>% #,
+  dplyr::group_by(year,length) %>% 
+  dplyr::summarise(sumnum=sum(num,na.rm=TRUE)) %>% #,
   #                 p=sum(predicted)) %>% 
-  dplyr::mutate(o=ifelse(o==0,NA,o)) %>% 
+  left_join(fit$catchdist.fleets %>% 
+              dplyr::filter(name %in% c('ldist.bmt','ldist.lln', 'ldist.comm')) %>%
+              dplyr::mutate(num = observed*total.catch) %>% 
+              dplyr::group_by(year) %>% 
+              dplyr::summarise(annual.total.catch=sum(num, na.rm = T))
+  ) %>% 
+  dplyr::mutate(o=ifelse(sumnum==0,NA,sumnum)/annual.total.catch) %>% 
   ungroup() %>% 
   ggplot(aes(length,o)) + geom_point(col='black') + 
   geom_segment(aes(xend=length,yend=0),col='black') + 
@@ -804,13 +921,13 @@ comm_length_dist <-
   #facet_wrap(~year+step) + 
   facet_wrap(~year) + 
   theme_bw() + #geom_line(aes(y=p)) + 
-  geom_label(x=90,y=0.17, aes(label=year),size=2) +
+  geom_label(x=90,y=0.18, aes(label=year),size=4) +
   #geom_text(x=2,y=0.22,aes(label=paste0('n = ',total.catch)),size=3) +
   theme(strip.background = element_blank(),strip.text=element_blank()) + 
   xlab('Length') + ylab('Proportion') + 
   theme(axis.text.y = element_blank())
 
-if(marteg==8){
+if(marteg==8){ # I believe these were not used in the end 
 #number of samples 
  fit$catchdist.fleets %>% 
    filter(!(name %in% c('aldist.igfs','ldist.igfs','matp.igfs'))) %>% 
@@ -821,10 +938,162 @@ if(marteg==8){
    filter(!(name %in% c('aldist.comm','ldist.comm'))) %>% 
    group_by(name,year) %>% 
    dplyr::summarise(n=sum(number.x,na.rm=TRUE))
- }
+}
+
+if(marteg %in% c(6,8)){ #Gadget assessments
+  
+  ####some diagnostic plots from presentation, prettier for report:
+  comm_length_dist_settings<-NULL;
+  comm_length_dist_settings[[6]]<-list(c('ldist.lln', 'green'), c(1999, 122, 0.18, 2))
+  comm_length_dist_settings[[8]]<-list(c('ldist.comm', 'grey'), c(1999, 82, 0.18, 2))
+  
+  comm_length_dist_diag <-
+    fit$catchdist.fleets %>% 
+    filter(name==comm_length_dist_settings[[marteg]][[1]][1], year>comm_length_dist_settings[[marteg]][[2]][1]) %>% 
+    #unite(year,year,step,sep = ', q') %>%
+    ungroup() %>% 
+    ggplot(aes(lower,observed)) + geom_point(col=comm_length_dist_settings[[marteg]][[1]][2], size=0.5) + 
+    geom_segment(aes(xend=lower,yend=0),col=comm_length_dist_settings[[marteg]][[1]][2]) + 
+    facet_wrap(~year+step, drop = F, ncol = 6) + theme_bw() + 
+    geom_line(aes(y=predicted)) + #xlim(c(25,55)) + 
+    geom_label(data=expand.grid(year=(comm_length_dist_settings[[marteg]][[2]][1]+1):thisyear,step=1:4) %>%
+                 dplyr::mutate(label=paste(year,step,sep=', q')),
+               aes(label=label),x=comm_length_dist_settings[[marteg]][[2]][2],
+               y=comm_length_dist_settings[[marteg]][[2]][3],
+               size=comm_length_dist_settings[[marteg]][[2]][4]) + 
+    #geom_label(x=90,y=0.15,aes(label=sprintf('%s, q%s',year,step)), size=1.5) + 
+    #geom_text(x=140,y=0.07,angle=90,aes(label=paste0('n = ',round(total.catch)))) +
+    theme(strip.background = element_blank(),strip.text=element_blank()) + 
+    xlab('Length') + ylab('Proportion')
+  
+  
+#begin assessment results
+
+assess_result_settings<-NULL
+assess_result_settings[[6]]<-c(15, 0.2,0.8, 0.56,0.85, 0.2,0.8, 1)
+assess_result_settings[[8]]<-c(10, 0.2,0.25, 0.45,0.15, 0.5,0.85, 0.5)
+
+bio.plot <-
+  finres %>% #was bootres
+  rename(yea=year) %>%
+  select(-matches('cv|r|ssb')) %>%
+  rename(year=yea) %>%
+  gather(col,value,-year) %>%
+  dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
+                col = str_sub(col,-2),
+                value=value/1e6) %>%
+  filter((col %in% c('hb','tb'))) %>%
+  spread(stat,value) %>%
+  dplyr::mutate(col=ifelse(col=='hb','Ref. biomass','Total biomass')) %>%
+  ggplot(aes(year,f,group=col, color = col)) + #changed from m
+  #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
+  #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
+  geom_line() +
+  #geom_line(aes(y=f),col='red')+
+  theme_light() +
+  expand_limits(y=0) +
+  scale_color_manual(name=NULL,values=c('lightblue','gold')) +
+  labs(y='Biomass (in kt)',x='Year') +
+  theme(legend.position = c(assess_result_settings[[marteg]][2],assess_result_settings[[marteg]][3]))
+
+ssb.plot <-
+  finres %>%
+  select(c(year,matches('ssb'))) %>%
+  gather(col,value,-year) %>%
+  dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
+                col = "ssb",
+                value=value/1e6) %>%
+  spread(stat,value) %>%
+  #filter(year > 1990) %>% 
+  ggplot(aes(year,f,group=col)) +
+  #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
+  #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
+  geom_line() +
+  #geom_line(aes(y=f),col='red')+
+  theme_light() +
+  scale_fill_manual(name=NULL,values=c('gold','lightblue')) +
+  expand_limits(y=0) +
+  labs(y='SSB (in kt)',x='Year') +
+  theme(legend.position = 'none')
+
+
+F.plot <-
+  finres %>%
+  select(year,matches('[a-z]F|[a-z]hr')) %>%
+  select(-matches('cv')) %>%
+  gather(col,value,-year) %>%
+  dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
+                col = ifelse(grepl('hr',col),'Harvest rate','Fishing mortality')) %>%
+  spread(stat,value) %>%
+  filter(year < thisyear) %>% 
+  ggplot(aes(year,f,group=col, color = col)) +
+  #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
+  #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
+  geom_line() +
+  #geom_line(aes(y=f),col='red')+
+  theme_light() +
+  #expand_limits(y=0) +
+  ylim(0,assess_result_settings[[marteg]][8]) +
+  scale_color_manual(name=NULL,values=c('gold','lightblue','lightblue')) +
+  labs(y='Fishing mortality & Harvest rate',x="Year")+
+  theme(legend.position = c(assess_result_settings[[marteg]][4],assess_result_settings[[marteg]][5])) #(0.25,0.15)
+
+rec.plot <-
+  finres %>%
+  select(year,matches('[a-z]r')) %>%
+  select(-matches('hr')) %>%
+  gather(col,value,-year) %>%
+  dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
+                col = str_sub(col,-1),
+                value = value/1e6) %>%
+  filter(stat!='c') %>%
+  spread(stat,value) %>%
+  ggplot(aes(year,f,group=col)) +
+  #geom_ribbon(aes(ymax=u,ymin=l),alpha=0.5,fill='gold') +
+  #geom_ribbon(aes(ymax=uu,ymin=ll),alpha=0.5,fill='gold') +
+  geom_line() +
+  #geom_line(aes(y=f),col='red')+
+  theme_light() +
+  expand_limits(y=0) +
+  labs(y='Recruitment (in millions)',x="Year")
+
+catch.plot <-
+  fit$res.by.year %>%
+  dplyr::mutate(stock=ifelse(grepl('mat',stock),'Mature','Immature')) %>%
+  filter(year < thisyear) %>% 
+  ggplot(aes(year,catch/1e6,fill=stock)) +
+  geom_bar(stat='identity') +
+  theme_light() +
+  ylim(0,assess_result_settings[[marteg]][1]) +
+  scale_fill_manual(name = NULL, values=c('gold','lightblue')) +
+  labs(y='Landings (in kt)',x="Year") +
+  theme(legend.position = c(assess_result_settings[[marteg]][6],assess_result_settings[[marteg]][7]))
+
+# cv.plot <-
+#   finres %>%
+#   select(year,matches('cv')) %>%
+#   gather(col,value,-year) %>%
+#   dplyr::mutate(stat=str_sub(col,0,2),
+#          col = str_sub(col,3,5)) %>%
+#   filter(col %in% c('hb','ssb','r','F')) %>%
+#   spread(stat,value) %>%
+#   dplyr::mutate(col=case_when(.$col=='hb'~'Harv. biomass',
+#                        .$col=='ssb'~'SSB',
+#                        .$col=='r'~'Recruitment',
+#                        .$col=='F'~'F')) %>%
+#   ggplot(aes(year,cv,lty=col)) +
+#   geom_line() +
+#   scale_linetype_manual(name=NULL,values=1:4) +
+#   theme_light() +
+#   expand_limits(y=0) +
+#   labs(y='CV',x='Year') +
+#   theme(legend.position = c(0.2,0.8))
+}
+
 #########Begin exports for reports###########
 
-###First two items for GSS but don't work when within if statements
+###GSS section###
+#First two items for GSS but don't work when within if statements
 
 library(Logbooks)
 ass.yr <- thisyear
@@ -849,7 +1118,7 @@ kk<-cbind(yr=1997:(ass.yr-1),
 
 write.csv(kk, paste0(pathlist[[19]], "OtherCatch50-75.csv"), row.names=FALSE)
 
-###### Biomass indices #####
+###GSS Biomass indices ###
 load('/net/hafkaldi/export/u2/reikn/Tac/2018/19-GSS/Rwork/gulllaxind.RData')
 dat <- subset(gulllax.NewStr,sv %in% c('d400','total','shallow') & lengd == 10)
 dat <- mutate(dat,bio.st=bio.st/1e3,xpos=ifelse(winsor,ar+0.1,ar),
@@ -877,18 +1146,268 @@ dev.off()
 #system(paste("convert -verbose -density 300 tmp.eps -quality 92 -rotate 90  tmp.jpg", sep=""))
 #system(paste("cp tmp.jpg ", path,"SSmeltIndex.jpg",sep=""))
 
-#######
+#### End GSS section ####
 
+#Write tables that go into report
 
-
-  write.csv(landings, paste0(pathlist[[marteg]], 'landings.csv'), row.names = F)
+  write.csv(landings, paste0(pathlist[[marteg]], 'landings_full.csv'), row.names = F)
   write.csv(landings_by_country, paste0(pathlist[[marteg]], 'landings_by_country.csv'), row.names = F)
   write.csv(nb_lnd_by_yr, paste0(pathlist[[marteg]], 'nb_lnd_by_yr.csv'), row.names = F)
   write.csv(lnd_by_gear, paste0(pathlist[[marteg]], 'lnd_by_gear.csv'), row.names = F)
   write.csv(sampling_lengths, paste0(pathlist[[marteg]], 'sampling_lengths.csv'), row.names = F)
   write.csv(sampling_ages, paste0(pathlist[[marteg]], 'sampling_ages.csv'), row.names = F)
 
+#These are for updating the gogn_f_myndir and gogn_f_toflur files in TAC/Astand folders
+
+if(marteg==8){
+  
+  t_progn<-
+    read.csv2("../../../tusk_progn.csv") %>% 
+    select(-X)
+    write.csv(t_progn, paste0(pathlist[[marteg]],"tusk_progn_conv.csv"), row.names = F)
+  
+    read.csv2("../../../tusk_progn_by_adyear.csv") %>% 
+      select(-X) %>% 
+      write.csv(., paste0(pathlist[[marteg]],"tusk_progn_by_adyear_conv.csv"), row.names = F)
+    
+  t_stofnmat <-
+    t_progn %>% 
+    filter(trial==1) %>% 
+    select(Year = year, rec, catch, ssb, hr, refbio) %>% 
+    left_join(read.delim(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_myndir/08-Keila/Keila_Stofnmat.txt"))
+    ) %>%
+    filter(Year <= thisyear) %>% 
+    select(Year, rec, ssb, Catch, catch, hr, refbio) %>% 
+    mutate(Year, Rec = round(rec/1000), SSB = round(ssb/1000), Catch = ifelse(is.na(Catch), round(catch/1000), Catch), HR = round(hr,3), B40 = round(refbio/1000)) %>% 
+    select(Year, Rec, SSB, Catch, HR, B40)    
+  
+  t_stofnmat$Catch[t_stofnmat$Year==thisyear] <- NA
+  t_stofnmat$HR[t_stofnmat$Year==thisyear] <- NA
+  
+  t_stofnmat %>% 
+    select(Year, Rec, SSB, B40, Catch, HR) %>% 
+    rename('B40+' = B40) %>% 
+    write.csv(paste0(pathlist[[marteg]],"summary.csv"), row.names = F)
+  
+  t_stofnmat$Catch[t_stofnmat$Year==thisyear] <- ''
+  t_stofnmat$HR[t_stofnmat$Year==thisyear] <- ''
+  
+  t_stofnmat %>% 
+    write_tsv(paste0(pathlist[[marteg]],"Keila_Stofnmat.txt"))    
+  
+  t_retro <-
+    read.csv(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_myndir/08-Keila/KeilaRetro.csv")) %>% 
+    full_join(read.delim(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_myndir/08-Keila/Keila_Stofnmat.txt")) %>% 
+                mutate(year = Year, biomass = B40./1000, harv = B40./1000, ssb = SSB/1000, recr = Rec/1000, catch = Catch/1000, Fbar = HR, a.yr = lastyear) %>% 
+                select(year, biomass, harv, ssb, recr, catch, Fbar, a.yr)
+    ) %>% 
+    arrange(desc(a.yr), year) %>% 
+    filter(a.yr != min(a.yr))
+  
+  t_retro$catch[t_retro$a.yr==lastyear & t_retro$year==lastyear] <-
+    t_progn$catch[t_progn$trial==1 & t_progn$year==lastyear]/1000000
+
+  if(thisyear==2018){t_retro$Fbar <-ifelse(t_retro$Fbar > 1, t_retro$Fbar/1000, t_retro$Fbar)}
+  
+  t_retro %>% 
+    write.csv(paste0(pathlist[[marteg]],"KeilaRetro.csv"), row.names = F)    
+  
+  t_land <-
+    read.delim(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_myndir/08-Keila/keiluafli.txt")) %>% 
+    bind_rows(
+      landings %>% 
+        filter(year==lastyear, section == '5a') %>%
+        mutate(foreign = ifelse(country=='Iceland', 'isl', 'oth')) %>% 
+        group_by(year, foreign) %>% 
+        summarise(c = round(sum(c, na.rm = T))/1000) %>% 
+        bind_rows(landings %>% 
+                    filter(year==lastyear, section == '5a') %>%
+                    group_by(year) %>% 
+                    summarise(c = round(sum(c, na.rm = T))/1000) %>% 
+                    mutate(foreign = 'tot')
+        ) %>% 
+        spread(key = foreign, value = c) %>% 
+        rename(Year = year)
+    )  
+  
+  t_land %>% 
+    write_tsv(paste0(pathlist[[marteg]],"keiluafli.txt")) 
+  
+  read.csv(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_toflur/tusk/landings.csv")) %>% 
+    bind_rows(t_land %>% 
+      mutate(Iceland = isl*1000, Others = oth*1000, Total = tot*1000) %>% 
+      filter(Year==lastyear) %>% 
+      select(Year, Iceland, Others, Total)) %>% 
+    write.csv(paste0(pathlist[[marteg]],"landings.csv"), row.names = F)
+
+  #for putting into Veiðar last Hafro advice sheet table:
+
+  lods_oslaegt(mar) %>% 
+    filter(fteg == marteg,veidisvaedi == 'I',ar==lastyear) %>% 
+    left_join(tbl(mar,'gear_mapping')) %>% 
+    mutate(gear = ifelse(nvl(gear,' ') %in% imp_gears,gear, 'Other')) %>% 
+    group_by(ar,gear) %>% 
+    summarise(c = sum(magn_oslaegt)/1e3) %>% 
+    collect(n=Inf) %>% 
+    mutate(gear = forcats::fct_recode(gear,
+                                      Longlines='LLN',
+                                      `Bottom trawl`='BMT',
+                                      `Danish seine`='DSE',
+                                      `Gill nets`='GIL'), 
+           total =  lods_oslaegt(mar) %>% 
+             filter(fteg == marteg,veidisvaedi == 'I',ar==lastyear) %>% 
+             left_join(tbl(mar,'gear_mapping')) %>% 
+             mutate(gear = ifelse(nvl(gear,' ') %in% imp_gears,gear, 'Other')) %>% 
+             group_by(ar) %>% 
+             summarise(total = sum(magn_oslaegt)/1e3) %>% 
+             collect(n=Inf) %>% 
+             select(total) %>% 
+             unlist,
+           percentage = c/total)  %>% 
+    write.csv(paste0(pathlist[[marteg]],"gear_percentages.csv"), row.names = F) 
+  
+fishingyear<-paste0(lastyear-1,thisyear-1)
+lods_oslaegt(mar) %>% 
+    filter(fteg==marteg, timabil==fishingyear, veidisvaedi=='I') %>% 
+    left_join(lesa_skipaskra(mar)) %>% 
+    mutate(country = ifelse(nvl(flokkur,0) != -4,'Iceland',einkst)) %>% 
+    mutate(country = ifelse(country == 'Iceland',country,'Other')) %>% 
+    group_by(timabil,country) %>% 
+    summarise(sum = sum(magn_oslaegt, na.rm=T)) %>% 
+    collect(n=Inf) %>% 
+    write.csv(paste0(pathlist[[marteg]],"fishingyearlandings.csv"), row.names = F)
+
+}  
+
+if(marteg==6){
+  l_progn<-
+    read.csv2("../../../ling_progn.csv") %>% 
+    select(-X)
+    write.csv(l_progn, paste0(pathlist[[marteg]],"ling_progn_conv.csv"), row.names = F)
+    
+  read.csv2("../../../ling_progn_by_adyear.csv") %>% 
+      select(-X) %>% 
+      write.csv(., paste0(pathlist[[marteg]],"/ling_progn_by_adyear_conv.csv"), row.names = F)
+    
+  l_stofnmat <-
+    l_progn %>% 
+    filter(trial==1) %>% 
+    select(Year = year, rec, catch, ssb, hr, refbio) %>% 
+    left_join(read.delim(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_myndir/06-Langa/langaStofnmat.txt"))
+      ) %>%
+    filter(Year <= thisyear) %>%
+    select(Year, rec, ssb, Catch, catch, hr, refbio) %>% 
+    mutate(Year, Rec = round(rec/1000), SSB = round(ssb/1000), Catch = ifelse(is.na(Catch), round(catch/1000), Catch), HR = round(hr,3), B75 = round(refbio/1000)) %>% 
+    select(Year, Rec, SSB, Catch, HR, B75)    
+    
+  l_stofnmat$Catch[l_stofnmat$Year==thisyear] <- NA
+  l_stofnmat$HR[l_stofnmat$Year==thisyear] <- NA
+
+  l_stofnmat %>% 
+    select(Year, Rec, SSB, B75, Catch, HR) %>% 
+    rename('B75+' = B75) %>% 
+    write.csv(paste0(pathlist[[marteg]],"summary.csv"), row.names = F)
+
+  l_stofnmat$Catch[l_stofnmat$Year==thisyear] <- ''
+  l_stofnmat$HR[l_stofnmat$Year==thisyear] <- ''
+  
+  l_stofnmat %>%
+    write_tsv(paste0(pathlist[[marteg]],"langaStofnmat.txt"))
+
+  
+  l_retro <-
+    read.csv(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_myndir/06-Langa/LangaRetro.csv")) %>% 
+    full_join(read.delim(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_myndir/06-Langa/langaStofnmat.txt")) %>% 
+                mutate(year = Year, biomass = B75/1000, harvBio = B75/1000, SSB = SSB/1000, Fbar = HR, Catch = Catch/1000,  Rec = Rec/1000, a.yr = lastyear) %>% 
+                select(year, biomass, harvBio, SSB, Fbar, Catch, Rec, a.yr)
+    ) %>% 
+    arrange(desc(a.yr), year) %>% 
+    filter(a.yr != min(a.yr))
+  
+  l_retro$Catch[l_retro$a.yr==lastyear & l_retro$year==lastyear] <-
+    l_progn$catch[l_progn$trial==1 & l_progn$year==lastyear]/1000000
+  
+  l_retro %>% 
+    write.csv(paste0(pathlist[[marteg]],"LangaRetro.csv"), row.names = F)    
+  
+  
+  l_land <-
+    read.delim(paste0("/net/hafkaldi/export/u2/reikn/Tac/Astand",substring(lastyear,3),"/gogn_f_myndir/06-Langa/LangaAfli.txt")) %>% 
+    full_join(nb_land_gear_country %>% filter(year==lastyear) %>% round(.))
+  
+
+  l_land %>% 
+    write_tsv(paste0(pathlist[[marteg]],"LangaAfli.txt"))    
+
+  l_land %>% 
+    rename(Year = year, 'Long line' = lina, 'Gill net' = net, 'Bottom trawl' = botnv, 'Other gear' = annad, 'Other nations' = erl) %>% 
+    write.csv(paste0(pathlist[[marteg]],"landings.csv"), row.names = F)    
+ 
+  #for putting into Veiðar last Hafro advice sheet table:
+
+  
+  lods_oslaegt(mar) %>% 
+    filter(fteg == marteg,veidisvaedi == 'I',ar==lastyear) %>% 
+    left_join(tbl(mar,'gear_mapping')) %>% 
+    mutate(gear = ifelse(nvl(gear,' ') %in% imp_gears,gear, 'Other')) %>% 
+    group_by(ar,gear) %>% 
+    summarise(c = sum(magn_oslaegt)/1e3) %>% 
+    collect(n=Inf) %>% 
+    mutate(gear = forcats::fct_recode(gear,
+                                      Longlines='LLN',
+                                      `Bottom trawl`='BMT',
+                                      `Danish seine`='DSE',
+                                      `Gill nets`='GIL'), 
+           total =  lods_oslaegt(mar) %>% 
+             filter(fteg == marteg,veidisvaedi == 'I',ar==lastyear) %>% 
+             left_join(tbl(mar,'gear_mapping')) %>% 
+             mutate(gear = ifelse(nvl(gear,' ') %in% imp_gears,gear, 'Other')) %>% 
+             group_by(ar) %>% 
+             summarise(total = sum(magn_oslaegt)/1e3) %>% 
+             collect(n=Inf) %>% 
+             select(total) %>% 
+             unlist,
+           percentage = c/total)  %>% 
+    write.csv(paste0(pathlist[[marteg]],"gear_percentages.csv"), row.names = F)  
+  
+  
+  
+fishingyear<-paste0(lastyear-1,thisyear-1)
+lods_oslaegt(mar) %>% 
+    filter(fteg==marteg, timabil==fishingyear, veidisvaedi=='I') %>% 
+    left_join(lesa_skipaskra(mar)) %>% 
+    mutate(country = ifelse(nvl(flokkur,0) != -4,'Iceland',einkst)) %>% 
+    mutate(country = ifelse(country == 'Iceland',country,'Other')) %>% 
+    group_by(timabil,country) %>% 
+    summarise(sum = sum(magn_oslaegt, na.rm=T)) %>% 
+    collect(n=Inf) %>% 
+    write.csv(paste0(pathlist[[marteg]],"fishingyearlandings.csv"), row.names = F)
+  
+}
+  
   closeAllConnections()
+  
+  
+if(marteg %in% c(6,8)){ #Gadget assessments
+
+  pdf(paste0(pathlist[[marteg]], 'assess_results.pdf'), width = 12, height = 6)
+
+    gridExtra::grid.arrange(bio.plot,
+                        ssb.plot + 
+                          geom_hline(data=data_frame(y=bloss),aes(yintercept=y),col='black',lty=2),
+                        F.plot +   
+                          geom_hline(data=data_frame(y=c(Hmp_low,Hmp_high)),aes(yintercept=y),col='black',lty=2)+
+                          geom_hline(data=data_frame(y=Hmp),aes(yintercept=y),col='black'),
+                        rec.plot,
+                        catch.plot,ncol=3)
+
+  dev.off()
+
+  pdf(paste0(pathlist[[marteg]], 'comm_length_dist_diag.pdf'), width = 6, height = 8)
+      comm_length_dist_diag
+  dev.off()
+  
+}
   
   pdf(paste0(pathlist[[marteg]], 'landings_plot.pdf'), width = 6, height = 6)
     print(landings.plot)
@@ -922,9 +1441,12 @@ dev.off()
     print(four_plot)
   dev.off()
 
+catch_by_area_pos<-NULL; 
+catch_by_area_pos[[6]]<-c(0.4, 0.32, 0.23, 0.77);
+catch_by_area_pos[[8]]<-c(0.4, 0.24, 0.2, 0.88);
 pdf(paste0(pathlist[[marteg]], 'catch_by_area.pdf'), width = 8, height = 6)
   catch_by_area
-  vp <- grid::viewport(width = 0.4, height = 0.35, x = 0.24, y = 0.8)
+  vp <- grid::viewport(width = catch_by_area_pos[[marteg]][1], height = catch_by_area_pos[[marteg]][2], x = catch_by_area_pos[[marteg]][3], y = catch_by_area_pos[[marteg]][4])
   print(region.plot,vp = vp)
 dev.off()
 

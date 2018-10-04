@@ -32,6 +32,12 @@ marteg <- 6
 ref.cm <- 75
 thisyear <- as.numeric(substring(date(), 21))
 lastyear <- thisyear-1
+bloss <- 9.93
+Hmp <- 0.18
+Hmp_low <- 0.12
+Hmp_high <- 0.28
+bpa <- bloss
+blim <- 7.09
 
 SS <- read.gadget.lik.out('../../12-new_ass/WGTS/lik.final')
 
@@ -143,7 +149,7 @@ landed_catch <-
          veidisvaedi, l_dags, saga_nr)
 
 source('01-plots_and_tables.r')
-#source('01-indices4plot.R')
+source('01-indices4plot.R')
 
 @
 
@@ -400,10 +406,7 @@ print(region.plot,vp = vp)
 \frame{
 \frametitle{Accepted management plan}
 <<mp.plot, fig.height=5,fig.width=10,echo=FALSE>>=
-bloss <- 9.93
-Hmp <- 0.18
-bpa <- bloss
-blim <- 7.09
+
 ggplot(aes(x,y),
        data=data_frame(x=c(0,bpa,bpa*5),y=c(0,Hmp,Hmp))) +
   geom_path() +
@@ -612,20 +615,23 @@ fit$catchdist.fleets %>%
 \frame{
 \frametitle{Fit to data -- longline length distributions}
 <<echo=FALSE,fig.width=12, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
-fit$catchdist.fleets %>%
-  filter(name=='ldist.lln',year>1999) %>%
-  #unite(year,year,step,sep = ', q') %>%
-  ungroup() %>% 
-  ggplot(aes(lower,observed)) + geom_point(col='green',size=0.5) +
-  geom_segment(aes(xend=lower,yend=0),col='green') +
-  facet_wrap(~year+step,drop=FALSE,ncol=8) + theme_light() +
-  geom_line(aes(y=predicted)) + #xlim(c(25,90)) +
-#  geom_label(x=50,y=0.12,aes(label=sprintf('%s, q%s',year,step))) +
-#  geom_text(x=140,y=0.07,angle=90,aes(label=paste0('n = ',round(total.catch)))) +
-  xlab('Length') + ylab('Proportion') +
-  theme(strip.background = element_blank(),strip.text = element_blank()) +
-  geom_label(data=expand.grid(year=2000:thisyear,step=1:4) %>% dplyr::mutate(label=paste(year,step,sep=', ')),
-            aes(label=label),x=78,y=0.18,size=3)
+
+comm_length_dist_diag
+
+# fit$catchdist.fleets %>%
+#   filter(name=='ldist.lln',year>1999) %>%
+#   #unite(year,year,step,sep = ', q') %>%
+#   ungroup() %>% 
+#   ggplot(aes(lower,observed)) + geom_point(col='green',size=0.5) +
+#   geom_segment(aes(xend=lower,yend=0),col='green') +
+#   facet_wrap(~year+step,drop=FALSE,ncol=8) + theme_light() +
+#   geom_line(aes(y=predicted)) + #xlim(c(25,90)) +
+# #  geom_label(x=50,y=0.12,aes(label=sprintf('%s, q%s',year,step))) +
+# #  geom_text(x=140,y=0.07,angle=90,aes(label=paste0('n = ',round(total.catch)))) +
+#   xlab('Length') + ylab('Proportion') +
+#   theme(strip.background = element_blank(),strip.text = element_blank()) +
+#   geom_label(data=expand.grid(year=2000:thisyear,step=1:4) %>% dplyr::mutate(label=paste(year,step,sep=', ')),
+#             aes(label=label),x=78,y=0.18,size=3)
 
 
 @
@@ -873,128 +879,139 @@ Management plan & $H_{mp}$ & 0.18 & $H$ such that $P(SSB<B_{pa}|\textup{for any 
 \frame{
 \frametitle{Assessment results}
 <<echo=FALSE,results='asis',fig.width=12, fig.height=6,cache=TRUE,warning=FALSE,message=FALSE>>=
-bio.plot <-
-  finres %>% #was bootres
-  rename(yea=year) %>%
-  select(-matches('cv|r|ssb')) %>%
-  rename(year=yea) %>%
-  gather(col,value,-year) %>%
-  dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
-         col = str_sub(col,-2),
-         value=value/1e6) %>%
-  filter((col %in% c('hb','tb'))) %>%
-  spread(stat,value) %>%
-  dplyr::mutate(col=ifelse(col=='hb','Ref. biomass','Total biomass')) %>%
-  ggplot(aes(year,f,group=col, color = col)) + #changed from m
-  #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
-  #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
-  geom_line() +
-  #geom_line(aes(y=f),col='red')+
-  theme_light() +
-  expand_limits(y=0) +
-  scale_color_manual(name=NULL,values=c('lightblue','gold')) +
-  labs(y='Biomass (in kt)',x='Year') +
-  theme(legend.position = c(0.1,0.1))
 
-ssb.plot <-
-  finres %>%
-  select(c(year,matches('ssb'))) %>%
-  gather(col,value,-year) %>%
-  dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
-         col = "ssb",
-         value=value/1e6) %>%
-  spread(stat,value) %>%
-  #filter(year > 1990) %>% 
-  ggplot(aes(year,f,group=col)) +
-  #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
-  #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
-  geom_line() +
-  #geom_line(aes(y=f),col='red')+
-  theme_light() +
-   scale_fill_manual(name=NULL,values=c('gold','lightblue')) +
-  expand_limits(y=0) +
-  labs(y='SSB (in kt)',x='Year') +
-  theme(legend.position = 'none')
-
-
-F.plot <-
-  finres %>%
-  select(year,matches('[a-z]F|[a-z]hr')) %>%
-  select(-matches('cv')) %>%
-  gather(col,value,-year) %>%
-  dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
-         col = ifelse(grepl('hr',col),'Harvest rate','Fishing mortality')) %>%
-  spread(stat,value) %>%
-  filter(year < thisyear) %>% 
-  ggplot(aes(year,f,group=col, color = col)) +
-  #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
-  #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
-  geom_line() +
-  #geom_line(aes(y=f),col='red')+
-  theme_light() +
-  expand_limits(y=0) +
-  scale_color_manual(name=NULL,values=c('gold','lightblue')) +
-  labs(y='Fishing mortality & Harvest rate',x="Year")+
-  theme(legend.position = c(0.15,0.15))
-
-rec.plot <-
-  finres %>%
-  select(year,matches('[a-z]r')) %>%
-  select(-matches('hr')) %>%
-  gather(col,value,-year) %>%
-  dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
-         col = str_sub(col,-1),
-         value = value/1e6) %>%
-  filter(stat!='c') %>%
-  spread(stat,value) %>%
-  ggplot(aes(year,f,group=col)) +
-  #geom_ribbon(aes(ymax=u,ymin=l),alpha=0.5,fill='gold') +
-  #geom_ribbon(aes(ymax=uu,ymin=ll),alpha=0.5,fill='gold') +
-  geom_line() +
-  #geom_line(aes(y=f),col='red')+
-  theme_light() +
-  expand_limits(y=0) +
-  labs(y='Recruitment (in millions)',x="Year")
-
-catch.plot <-
-  fit$res.by.year %>%
-  dplyr::mutate(stock=ifelse(grepl('mat',stock),'Mature','Immature')) %>%
-  filter(year < thisyear) %>% 
-  ggplot(aes(year,catch/1e6,fill=stock)) +
-  geom_bar(stat='identity') +
-  theme_light() +
-  scale_fill_manual(name = NULL, values=c('gold','lightblue')) +
-  labs(y='Landings (in kt)',x="Year") +
-  theme(legend.position = c(0.1,0.1))
-
-# cv.plot <-
-#   finres %>%
-#   select(year,matches('cv')) %>%
-#   gather(col,value,-year) %>%
-#   dplyr::mutate(stat=str_sub(col,0,2),
-#          col = str_sub(col,3,5)) %>%
-#   filter(col %in% c('hb','ssb','r','F')) %>%
-#   spread(stat,value) %>%
-#   dplyr::mutate(col=case_when(.$col=='hb'~'Harv. biomass',
-#                        .$col=='ssb'~'SSB',
-#                        .$col=='r'~'Recruitment',
-#                        .$col=='F'~'F')) %>%
-#   ggplot(aes(year,cv,lty=col)) +
-#   geom_line() +
-#   scale_linetype_manual(name=NULL,values=1:4) +
-#   theme_light() +
-#   expand_limits(y=0) +
-#   labs(y='CV',x='Year') +
-#   theme(legend.position = c(0.2,0.8))
-
-gridExtra::grid.arrange(bio.plot,
+    gridExtra::grid.arrange(bio.plot,
                         ssb.plot + 
-                        geom_hline(data=data_frame(y=bloss),aes(yintercept=y),col='black',lty=2),
+                          geom_hline(data=data_frame(y=bloss),aes(yintercept=y),col='black',lty=2),
                         F.plot +   
-                          geom_hline(data=data_frame(y=c(0.12,0.28)),aes(yintercept=y),col='black',lty=2)+
-                        geom_hline(data=data_frame(y=0.18),aes(yintercept=y),col='black'),
+                          geom_hline(data=data_frame(y=c(Hmp_low,Hmp_high)),aes(yintercept=y),col='black',lty=2)+
+                          geom_hline(data=data_frame(y=Hmp),aes(yintercept=y),col='black'),
                         rec.plot,
                         catch.plot,ncol=3)
+
+
+# bio.plot <-
+#   finres %>% #was bootres
+#   rename(yea=year) %>%
+#   select(-matches('cv|r|ssb')) %>%
+#   rename(year=yea) %>%
+#   gather(col,value,-year) %>%
+#   dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
+#          col = str_sub(col,-2),
+#          value=value/1e6) %>%
+#   filter((col %in% c('hb','tb'))) %>%
+#   spread(stat,value) %>%
+#   dplyr::mutate(col=ifelse(col=='hb','Ref. biomass','Total biomass')) %>%
+#   ggplot(aes(year,f,group=col, color = col)) + #changed from m
+#   #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
+#   #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
+#   geom_line() +
+#   #geom_line(aes(y=f),col='red')+
+#   theme_light() +
+#   expand_limits(y=0) +
+#   scale_color_manual(name=NULL,values=c('lightblue','gold')) +
+#   labs(y='Biomass (in kt)',x='Year') +
+#   theme(legend.position = c(0.1,0.1))
+# 
+# ssb.plot <-
+#   finres %>%
+#   select(c(year,matches('ssb'))) %>%
+#   gather(col,value,-year) %>%
+#   dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
+#          col = "ssb",
+#          value=value/1e6) %>%
+#   spread(stat,value) %>%
+#   #filter(year > 1990) %>% 
+#   ggplot(aes(year,f,group=col)) +
+#   #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
+#   #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
+#   geom_line() +
+#   #geom_line(aes(y=f),col='red')+
+#   theme_light() +
+#    scale_fill_manual(name=NULL,values=c('gold','lightblue')) +
+#   expand_limits(y=0) +
+#   labs(y='SSB (in kt)',x='Year') +
+#   theme(legend.position = 'none')
+# 
+# 
+# F.plot <-
+#   finres %>%
+#   select(year,matches('[a-z]F|[a-z]hr')) %>%
+#   select(-matches('cv')) %>%
+#   gather(col,value,-year) %>%
+#   dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
+#          col = ifelse(grepl('hr',col),'Harvest rate','Fishing mortality')) %>%
+#   spread(stat,value) %>%
+#   filter(year < thisyear) %>% 
+#   ggplot(aes(year,f,group=col, color = col)) +
+#   #geom_ribbon(aes(ymax=u,ymin=l,fill=col),alpha=0.5) +
+#   #geom_ribbon(aes(ymax=uu,ymin=ll,fill=col),alpha=0.5) +
+#   geom_line() +
+#   #geom_line(aes(y=f),col='red')+
+#   theme_light() +
+#   expand_limits(y=0) +
+#   scale_color_manual(name=NULL,values=c('gold','lightblue')) +
+#   labs(y='Fishing mortality & Harvest rate',x="Year")+
+#   theme(legend.position = c(0.15,0.15))
+# 
+# rec.plot <-
+#   finres %>%
+#   select(year,matches('[a-z]r')) %>%
+#   select(-matches('hr')) %>%
+#   gather(col,value,-year) %>%
+#   dplyr::mutate(stat=gsub('(^u+|^l+|^m|^f).*',("\\1"),col),
+#          col = str_sub(col,-1),
+#          value = value/1e6) %>%
+#   filter(stat!='c') %>%
+#   spread(stat,value) %>%
+#   ggplot(aes(year,f,group=col)) +
+#   #geom_ribbon(aes(ymax=u,ymin=l),alpha=0.5,fill='gold') +
+#   #geom_ribbon(aes(ymax=uu,ymin=ll),alpha=0.5,fill='gold') +
+#   geom_line() +
+#   #geom_line(aes(y=f),col='red')+
+#   theme_light() +
+#   expand_limits(y=0) +
+#   labs(y='Recruitment (in millions)',x="Year")
+# 
+# catch.plot <-
+#   fit$res.by.year %>%
+#   dplyr::mutate(stock=ifelse(grepl('mat',stock),'Mature','Immature')) %>%
+#   filter(year < thisyear) %>% 
+#   ggplot(aes(year,catch/1e6,fill=stock)) +
+#   geom_bar(stat='identity') +
+#   theme_light() +
+#   scale_fill_manual(name = NULL, values=c('gold','lightblue')) +
+#   labs(y='Landings (in kt)',x="Year") +
+#   theme(legend.position = c(0.1,0.1))
+# 
+# # cv.plot <-
+# #   finres %>%
+# #   select(year,matches('cv')) %>%
+# #   gather(col,value,-year) %>%
+# #   dplyr::mutate(stat=str_sub(col,0,2),
+# #          col = str_sub(col,3,5)) %>%
+# #   filter(col %in% c('hb','ssb','r','F')) %>%
+# #   spread(stat,value) %>%
+# #   dplyr::mutate(col=case_when(.$col=='hb'~'Harv. biomass',
+# #                        .$col=='ssb'~'SSB',
+# #                        .$col=='r'~'Recruitment',
+# #                        .$col=='F'~'F')) %>%
+# #   ggplot(aes(year,cv,lty=col)) +
+# #   geom_line() +
+# #   scale_linetype_manual(name=NULL,values=1:4) +
+# #   theme_light() +
+# #   expand_limits(y=0) +
+# #   labs(y='CV',x='Year') +
+# #   theme(legend.position = c(0.2,0.8))
+# 
+# gridExtra::grid.arrange(bio.plot,
+#                         ssb.plot + 
+#                         geom_hline(data=data_frame(y=bloss),aes(yintercept=y),col='black',lty=2),
+#                         F.plot +   
+#                           geom_hline(data=data_frame(y=c(0.12,0.28)),aes(yintercept=y),col='black',lty=2)+
+#                         geom_hline(data=data_frame(y=0.18),aes(yintercept=y),col='black'),
+#                         rec.plot,
+#                         catch.plot,ncol=3)
 
 @
 
