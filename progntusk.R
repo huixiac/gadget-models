@@ -2,9 +2,8 @@ library(Rgadget)
 library(mfdb)
 
 
-## input parameters
-
-path <- '08-tusk/07-new_ass/'
+lastyearTAC <- 4370
+path <- '08-tusk/01-new_ass/'
 mainfile <- 'main'
 num.years <- 10
 num.iter <- 1
@@ -28,7 +27,7 @@ btrigger <- bloss
 
 #load('08-tusk/99-docs/bootfit.Rdata')
 
-## read function
+## read functions
 readoutput <- function(x){
   tmp <- readLines(x)
   file.remove(x)
@@ -46,8 +45,25 @@ readoutput <- function(x){
     dplyr::mutate(trial=cut(1:length(year),c(0,which(diff(year)<0),1e9),labels = FALSE)-1) %>% 
     tibble::as_tibble() 
 }
- 
-pre.fleets <- data_frame(fleet_name = c('comm'))
+readcatch <- function(x){
+  tmp <- readLines(x)
+  preamble <- tmp[grepl(';',tmp)]
+  body <- tmp[!grepl(';',tmp)]
+  header <- preamble[grepl('year',preamble)] %>% 
+    gsub('; ','',.) %>% 
+    str_split('\t') %>% 
+    unlist()
+  body %>% 
+    paste(collapse='\n') %>% 
+    read.table(text=.,
+               col.names = header,fill=TRUE) %>% 
+    tibble::as_tibble() 
+}
+
+#repeats the first (most important) fleet to create a 'fill' fleet
+#that fills out the last two quarters of this fishing year with enough
+#catch to fill the TAC exactly
+pre.fleets <- data_frame(base_fleet = c(ref.fleet,'comm'))
 
 
 ref.points <- 
@@ -69,7 +85,8 @@ ref.points <-
 
 
 
-pre.fleets$base_fleet <- pre.fleets$base_fleet%||%pre.fleets$fleet_name
+pre.fleets$fleet_name <- pre.fleets$base_fleet%||%pre.fleets$fleet_name
+pre.fleets$fleet_name[1] <- paste0(ref.fleet,'.fill')
 pre.fleets$fleet_type <- pre.fleets$fleet_type%||%'totalfleet'
 
 params <- read.gadget.parameters(file=sprintf('%s/%s',path,params.file))
@@ -108,7 +125,6 @@ attr(main[[1]]$timefile,'file_config')$mainfile_section <- 'timefile'
 main[[1]]$timefile %>%  
   gadget_update(lastyear = .[[1]]$lastyear + num.years) %>% 
   write.gadget.file(run.dir)
-
 
 ## create a timing schedule for the fleet operations
 schedule <- 
@@ -228,23 +244,42 @@ suits <-
 
 ## define fleet amounts that are parametrised by year, step, area 
 fleet.amount <- 
-  pre.fleets$fleet_name %>% 
-  setNames(.,.) %>% 
+  setNames(pre.fleets$base_fleet%||%pre.fleets$fleet_name, 
+           pre.fleets$fleet_name) %>% 
   purrr::map(function(x) 
     schedule %>% 
       dplyr::mutate(year = year-1,number= 1) %>% #paste('#fleet',x,year,step,area,sep='.')) %>% 
       structure(area_group = lift(mfdb_group)(main[[1]]$areafile[[1]]$areas %>% 
                                                 setNames(.,.))))
 
+#the first fleet is fixed as the one with filled data
+dat <- 
+  readcatch(paste(path,'Data/fleet.comm.data',sep = '/')) %>% 
+  full_join(readcatch(paste(path,'Data/fleet.foreign.data',sep = '/')))
+fleet.amount[[1]] <- data_frame(year = main[[1]]$timefile[[1]]$lastyear,
+                                step = c(2,3),
+                                area = 1,
+                                total_weight = dat %>% 
+                                  filter(year==2018 | (year==2017 & step==4) ) %>% 
+                                  mutate(all = 'all') %>% 
+                                  group_by(all) %>% 
+                                  summarise(restperstep = (lastyearTAC*1000-sum(total_weight))/2) %>% 
+                                  select(restperstep) %>% 
+                                  unlist()
+) %>% 
+  structure(area_group = lift(mfdb_group)(main[[1]]$areafile[[1]]$areas %>% 
+                                            setNames(.,.)))
+
 ## define the projection fleets
 fleet.tmp <- 
   gadgetfleet('fleet.predict',path,missingOkay = TRUE) 
 
 for(i in seq_along(pre.fleets$fleet_name)){
+  pfx <- ifelse(i==1, '','predict.')
   fleet.tmp <- 
     fleet.tmp %>% 
     gadget_update(pre.fleets$fleet_type[i],
-                  name = paste0('predict.',pre.fleets$fleet_name[i]),
+                  name = paste0(pfx,pre.fleets$fleet_name[i]),
                   suitability = 
                     suits %>% 
                     dplyr::filter(fleet == pre.fleets$fleet_name[i]) %>% 
@@ -265,7 +300,8 @@ pre.fleet.names <-
   fleet.tmp %>% 
   map(~.[[1]]) %>% 
   unlist() %>% 
-  as.character()
+  as.character() %>% 
+  grep('predict',.,value=T)
 
 ## assumes expL50 as that is the only thing allowed
 biocoeffs <- 
@@ -461,7 +497,7 @@ print <-
                                     yearsandsteps = 'all 2'),
                                list('[component]',
                                     type = 'predatorpreyprinter',
-                                    predatornames = c(ref.fleet,pre.fleet.names,'foreign'),
+                                    predatornames = c(ref.fleet,pre.fleets$fleet_name[1],pre.fleet.names,'foreign'),
                                     preynames = c(imm.stock,mat.stock),
                                     areaaggfile = gadgetdata(sprintf('Aggfiles/%s.area.agg',mat.stock),
                                                              data = data.frame(name = sprintf('area%s',stocks[[mat.stock]][[1]]$livesonareas),
@@ -540,80 +576,80 @@ tmp <- run.func(params.pre %>% select(-repl) %>% filter(comm.hr.high %in% c(0,0.
 
 names(tmp) <- names(tmp) %>% str_split('/') %>% map(~tail(.,1)) %>% unlist()
 
+lastadviceyear <- main[[1]]$timefile[[1]]$lastyear + 4
 
 progn <- 
   tmp$catch.F %>% 
-  filter(year < 2021) %>%
+  filter(year < lastadviceyear) %>%
   group_by(year,trial) %>% 
   summarise(F=mean(mortality)) %>% 
   left_join(tmp$refbio %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(refbio=sum(number*mean_weight))) %>% 
   left_join(tmp$tuskmat.ssb %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(ssb=sum(number*mean_weight))) %>% 
   left_join(tmp$totalbio %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(totalbio=sum(number*mean_weight))) %>% 
   left_join(tmp$catch.lw %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(catch=sum(biomass_consumed))) %>% 
   left_join(tmp$tuskimm.rec %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               select(year,rec=number,trial)) %>% 
   left_join(tmp$refbio %>% 
               mutate(bio = number*mean_weight) %>% 
               left_join(tmp$catch.lw %>% 
-                          select(year,step,trial,catch=sum(biomass_consumed))) %>% 
+                          select(year,step,trial,catch=biomass_consumed)) %>% 
               mutate(hr=4*catch/bio) %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(hr=mean(hr)))
 
 progn_by_adyear <- 
   tmp$catch.F %>% 
   mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-  filter(ad.year < 2021) %>%
+  filter(ad.year < lastadviceyear) %>%
   group_by(ad.year,trial) %>% 
   summarise(F=mean(mortality)) %>% 
   left_join(tmp$refbio %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(refbio=sum(number*mean_weight))) %>% 
   left_join(tmp$tuskmat.ssb %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(ssb=sum(number*mean_weight))) %>% 
   left_join(tmp$totalbio %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(totalbio=sum(number*mean_weight))) %>% 
   left_join(tmp$catch.lw %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(catch=sum(biomass_consumed))) %>% 
   left_join(tmp$tuskimm.rec %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               select(ad.year,rec=number,trial)) %>% 
   left_join(tmp$refbio %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/')),
                      bio = number*mean_weight) %>% 
               left_join(tmp$catch.lw %>% 
                           mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-                          select(ad.year,step,trial,catch=sum(biomass_consumed))) %>% 
               mutate(hr=4*catch/bio) %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
-              summarise(hr=mean(hr)))
+              summarise(hr=mean(hr))))
 
 write.csv2(progn,file='tusk_progn.csv')
 write.csv2(progn_by_adyear,file='tusk_progn_by_adyear.csv')

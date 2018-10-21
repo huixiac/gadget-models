@@ -20,7 +20,7 @@ ldist.igfs <-
 
 
 ## Age IGFS
-
+if(vers=='04-2017noage'|vers=='05-2017noage_growth_rest'){defaults$year<-1982:2016}
 aldist.igfs <-
   mfdb_sample_count(mdb, 
                     c('age', 'length'),
@@ -31,6 +31,7 @@ aldist.igfs <-
                                                   seq(minlength, maxlength, by = dl),
                                                   open_ended = c("upper","lower"))),
                       defaults))
+if(vers=='04-2017noage'|vers=='05-2017noage_growth_rest'){defaults$year<-1982:2017}
 
 matp.igfs <- 
   mfdb_sample_count(mdb, c('maturity_stage','age','length'),
@@ -59,7 +60,7 @@ ldist.comm <-
                                              open_ended = c("upper","lower"))),
                       defaults))
 
-
+if(vers=='04-2017noage'|vers=='05-2017noage_growth_rest'){defaults$year<-1982:2016}
 aldist.comm <-
   mfdb_sample_count(mdb, 
                     c('age', 'length'), 
@@ -71,5 +72,6 @@ aldist.comm <-
                                              seq(minlength, maxlength, by = dl),
                                              open_ended = c("upper","lower"))),
                       defaults))
-  
+if(vers=='04-2017noage'|vers=='05-2017noage_growth_rest'){defaults$year<-1982:2017}
+
   

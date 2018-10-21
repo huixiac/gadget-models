@@ -1,36 +1,39 @@
-#devtools::install_github('mareframe/mfdb',ref='6.x')
-#devtools::install_github('Hafro/rgadget')
 library(Rgadget)
 library(mfdb)
 
-#setwd("/net/hafkaldi/export/home/haf/pamela/fishvice/gadget-models/")
-## input parameters
+setwd('/home/pamela/Documents/Hafro/fishvice/gadget-models')
 
-path <- '06-ling/13-new_ass_preprogn'
+## input parameters
+lastyearTAC <- 4370
+#lastyearTAC <- 3780
+#thisyear<-2017
+#lastyear<-thisyear-1
+path <- '08-tusk/02-growth_rest_run1'
+#path <- '08-tusk/07-new_ass_2017'
 mainfile <- 'main'
 num.years <- 10
 num.iter <- 1
 params.file <- 'WGTS/params.final'
-pre <- 'PRE'
-imm.stock <- 'lingimm'
-mat.stock <- 'lingmat'
+pre <- 'PROGN'
+imm.stock <- 'tuskimm'
+mat.stock <- 'tuskmat'
 options(stringsAsFactors = FALSE)
 block.size <- 5
 rec.step <- 1
-ref.fleet <- "lln"
+ref.fleet <- "comm"
 harvest.rate <- seq(0,1,by=0.01)
-asserr.cv <- 0.26
+asserr.cv <- 0.2
 asserr.rho <- 0.8
-ref.cm <- 75
+ref.cm <- 40
 
-bloss <- 9929629
+bloss <- 6.24e6
 bpa <- bloss
 blim <- bpa/exp(1.645*0.2) ## always set as B_pa/1.4
 btrigger <- bloss
 
-#load('08-ling/99-docs/bootfit.Rdata')
+#load('08-tusk/99-docs/bootfit.Rdata')
 
-## read function
+## read functions
 readoutput <- function(x){
   tmp <- readLines(x)
   file.remove(x)
@@ -48,17 +51,32 @@ readoutput <- function(x){
     dplyr::mutate(trial=cut(1:length(year),c(0,which(diff(year)<0),1e9),labels = FALSE)-1) %>% 
     tibble::as_tibble() 
 }
+readcatch <- function(x){
+  tmp <- readLines(x)
+  preamble <- tmp[grepl(';',tmp)]
+  body <- tmp[!grepl(';',tmp)]
+  header <- preamble[grepl('year',preamble)] %>% 
+    gsub('; ','',.) %>% 
+    str_split('\t') %>% 
+    unlist()
+  body %>% 
+    paste(collapse='\n') %>% 
+    read.table(text=.,
+               col.names = header,fill=TRUE) %>% 
+    tibble::as_tibble() 
+}
 
-
-
-pre.fleets <- data_frame(fleet_name = c('lln','bmt','gil'))
+#repeats the first (most important) fleet to create a 'fill' fleet
+#that fills out the last two quarters of this fishing year with enough
+#catch to fill the TAC exactly
+pre.fleets <- data_frame(base_fleet = c(ref.fleet,'comm'))
 
 
 ref.points <- 
-  data_frame(switch = c('lingmat.btrigger','lingmat.blim','lln.hr.low','lln.hr.high',
-                        'fleet.prop.predict.lln','fleet.prop.predict.bmt','fleet.prop.predict.gil'),
-             value = c(0,bloss,0,0.2,
-                       0.66,0.27,.07),
+  data_frame(switch = c('tuskmat.btrigger','tuskmat.blim','comm.hr.low','comm.hr.high',
+                        'fleet.prop.predict.comm'),
+             value = c(btrigger,bloss,0,0.2,
+                       1),
              lower = 0.5*value,
              upper = pmax(1.5*value,1),
              optimise = 0)
@@ -73,7 +91,8 @@ ref.points <-
 
 
 
-pre.fleets$base_fleet <- pre.fleets$base_fleet%||%pre.fleets$fleet_name
+pre.fleets$fleet_name <- pre.fleets$base_fleet%||%pre.fleets$fleet_name
+pre.fleets$fleet_name[1] <- paste0(ref.fleet,'.fill')
 pre.fleets$fleet_type <- pre.fleets$fleet_type%||%'totalfleet'
 
 params <- read.gadget.parameters(file=sprintf('%s/%s',path,params.file))
@@ -112,7 +131,6 @@ attr(main[[1]]$timefile,'file_config')$mainfile_section <- 'timefile'
 main[[1]]$timefile %>%  
   gadget_update(lastyear = .[[1]]$lastyear + num.years) %>% 
   write.gadget.file(run.dir)
-
 
 ## create a timing schedule for the fleet operations
 schedule <- 
@@ -181,9 +199,6 @@ stocks[[imm.stock]] %>%
   write.gadget.file(run.dir)
 
 
-
-
-
 ## setup hockeystick recruitment
 
 gadgetstock('hockeystock',run.dir,missingOkay = TRUE) %>% 
@@ -235,23 +250,44 @@ suits <-
 
 ## define fleet amounts that are parametrised by year, step, area 
 fleet.amount <- 
-  pre.fleets$fleet_name %>% 
-  setNames(.,.) %>% 
+  #  pre.fleets$fleet_name %>% 
+  #  setNames(.,.) %>% 
+  setNames(pre.fleets$base_fleet%||%pre.fleets$fleet_name, 
+           pre.fleets$fleet_name) %>% 
   purrr::map(function(x) 
     schedule %>% 
       dplyr::mutate(year = year-1,number= 1) %>% #paste('#fleet',x,year,step,area,sep='.')) %>% 
       structure(area_group = lift(mfdb_group)(main[[1]]$areafile[[1]]$areas %>% 
                                                 setNames(.,.))))
 
+#the first fleet is fixed as the one with filled data
+dat <- 
+  readcatch(paste(path,'Data/fleet.comm.data',sep = '/')) %>% 
+  full_join(readcatch(paste(path,'Data/fleet.foreign.data',sep = '/')))
+fleet.amount[[1]] <- data_frame(year = main[[1]]$timefile[[1]]$lastyear,
+                                step = c(2,3),
+                                area = 1,
+                                total_weight = dat %>% 
+                                  filter(year==thisyear | (year==lastyear & step==4) ) %>% 
+                                  mutate(all = 'all') %>% 
+                                  group_by(all) %>% 
+                                  summarise(restperstep = (lastyearTAC*1000-sum(total_weight))/2) %>% 
+                                  select(restperstep) %>% 
+                                  unlist()
+) %>% 
+  structure(area_group = lift(mfdb_group)(main[[1]]$areafile[[1]]$areas %>% 
+                                            setNames(.,.)))
+
 ## define the projection fleets
 fleet.tmp <- 
   gadgetfleet('fleet.predict',path,missingOkay = TRUE) 
 
 for(i in seq_along(pre.fleets$fleet_name)){
+  pfx <- ifelse(i==1, '','predict.')
   fleet.tmp <- 
     fleet.tmp %>% 
     gadget_update(pre.fleets$fleet_type[i],
-                  name = paste0('predict.',pre.fleets$fleet_name[i]),
+                  name = paste0(pfx,pre.fleets$fleet_name[i]),
                   suitability = 
                     suits %>% 
                     dplyr::filter(fleet == pre.fleets$fleet_name[i]) %>% 
@@ -272,7 +308,8 @@ pre.fleet.names <-
   fleet.tmp %>% 
   map(~.[[1]]) %>% 
   unlist() %>% 
-  as.character()
+  as.character() %>% 
+  grep('predict',.,value=T)
 
 ## assumes expL50 as that is the only thing allowed
 biocoeffs <- 
@@ -331,62 +368,72 @@ rep.params <- function(params){
     dplyr::mutate(run.id=1:n()) %>% 
     split(.$run.id) %>% 
     purrr::map(function(x){
-      block.rec <-
-        imm.stock %>% 
-        purrr::set_names(.,.) %>% 
-        purrr::map(~stocks[[.]]$doesrenew$normalparamfile[[1]] %>%
-                     dplyr::filter(year < min(schedule$year)) %>% 
-                     dplyr::mutate(number = number %>% 
-                                     unlist() %>% 
-                                     map(~eval(.,setNames( nm=params$switch,params$value) %>% 
-                                                 as.list())) %>% 
-                                     unlist())) %>%
-        dplyr::bind_rows(.id='stock') %>%
-        split(.$stock) %>% 
-        purrr::map(function(x) {
-          schedule %>%
-            filter(step==1) %>% 
-            mutate(number = mean(tail(x$number,3))) 
-        }) %>%
-        bind_rows(.id='stock') %>% 
-        dplyr::transmute(switch=sprintf('%s.rec.%s',stock,year),
-                         value = number,
-                         upper=1.5*number,
-                         lower=0.5*number,
-                         optimise = 0)
+        block.rec <-
+          imm.stock %>% 
+          purrr::set_names(.,.) %>% 
+          purrr::map(~stocks[[.]]$doesrenew$normalparamfile[[1]] %>%
+                       dplyr::filter(year < min(schedule$year)) %>% 
+                       dplyr::mutate(number = number %>% 
+                                       unlist() %>% 
+                                       map(~eval(.,setNames( nm=params$switch,params$value) %>% 
+                                                   as.list())) %>% 
+                                       unlist())) %>%
+          dplyr::bind_rows(.id='stock') %>%
+          split(.$stock) %>% 
+          purrr::map(function(x) {
+            schedule %>%
+              filter(step==1) %>% 
+#            mutate(number = mean(tail(x$number,3))) 
+            mutate(number = mean(tail(head(x$number,-2),3))) #this may change recruitment schedule? NOPE.
+          }) %>%
+          bind_rows(.id='stock') %>% 
+          dplyr::transmute(switch=sprintf('%s.rec.%s',stock,year),
+                           value = number,
+                           upper=1.5*number,
+                           lower=0.5*number,
+                           optimise = 0)
+        
       
       
-      
-      asserr <- 
-        mat.stock %>% 
-        purrr::set_names(.,.) %>%
-        purrr::map(~schedule %>%  
-                     dplyr::select(year) %>% 
-                     dplyr::distinct() %>% 
-                     dplyr::mutate(number = 1)) %>% #arima.sim(list(ar = asserr.rho), n = n(),
-        #   rand.gen = function(x) rnorm(x,sd=asserr.cv*sqrt(1-asserr.rho^2))) %>% 
-        #exp())) %>% 
-        dplyr::bind_rows(.id='stock') %>% 
-        dplyr::ungroup() %>% 
-        dplyr::transmute(switch=sprintf('%s.asserr.%s',stock,year-1),
-                         value = number,
-                         upper=1.5*number,
-                         lower=0.5*number,
-                         optimise = 0)
-      params %>% 
-        bind_rows(asserr,block.rec,ref.points) %>% 
-        dplyr::mutate(value = ifelse(grepl('hr.high',switch),x$harvest.rate,value))
+        asserr <- 
+          mat.stock %>% 
+          purrr::set_names(.,.) %>%
+          purrr::map(~schedule %>%  
+                       dplyr::select(year) %>% 
+                       dplyr::distinct() %>% 
+                       dplyr::mutate(number = 1)) %>% #arima.sim(list(ar = asserr.rho), n = n(),
+          #   rand.gen = function(x) rnorm(x,sd=asserr.cv*sqrt(1-asserr.rho^2))) %>% 
+          #exp())) %>% 
+          dplyr::bind_rows(.id='stock') %>% 
+          dplyr::ungroup() %>% 
+          dplyr::transmute(switch=sprintf('%s.asserr.%s',stock,year-1),
+                           value = number,
+                           upper=1.5*number,
+                           lower=0.5*number,
+                           optimise = 0)
+        params %>% 
+          bind_rows(asserr,block.rec,ref.points) %>% 
+          dplyr::mutate(value = ifelse(grepl('hr.high',switch),x$harvest.rate,value))
     })
 }
 
 #params.pre <- rep.params(params)
+
+tmp <- main[[1]]$timefile[[1]]$lastyear #hack based on time lag for recruitment at age 3; 
+#tmp <- main[[1]]$timefile[[1]]$lastyear + 2 #hack based on time lag for recruitment at age 3; 
+#+ 2 causes the time lag to shorten for age 1 recruit
+
 params.pre <-
   params %>% 
   rep.params() %>% 
   bind_rows(.id='repl') %>%
+  ## hack
+  mutate(value = ifelse(switch %in% sprintf('tusk.rec.%s',c(tmp-1,tmp)),
+                        mean(value[switch %in% sprintf('tusk.rec.%s',c((tmp-4):(tmp-2)))])
+                        ,value)) %>% 
   select(repl,switch,value) %>% 
   tidyr::spread(switch,value)
-
+  
 
 
 ## define the output, needs to be very compact
@@ -451,8 +498,9 @@ print <-
                                                              data = data.frame(name = sprintf('area%s',stocks[[imm.stock]][[1]]$livesonareas),
                                                                                value = stocks[[imm.stock]][[1]]$livesonareas)),
                                     ageaggfile = gadgetdata(sprintf('Aggfiles/%s.age.agg',imm.stock),
-                                                            data = data.frame(name = stocks[[imm.stock]][[1]]$minage,
-                                                                              value = stocks[[imm.stock]][[1]]$minage)),
+                                                            data = data.frame(name = 3, #changed here from stocks[[imm.stock]][[1]]$minage
+                                                                              value = 3)),#changed here value from 3
+                                                            #above is set up for recording age 3 recruitment. For age 1, change both to stocks[[imm.stock]][[1]]$minage
                                     lenaggfile =   gadgetdata(paste0('Aggfiles/', stocks[[imm.stock]][[1]]$stockname, '.stock.len.agg'),
                                                               data = data.frame(name = 'alllen',
                                                                                 value = paste(stocks[[imm.stock]][[1]]$minlength,stocks[[imm.stock]][[1]]$maxlength,
@@ -462,7 +510,7 @@ print <-
                                     yearsandsteps = 'all 2'),
                                list('[component]',
                                     type = 'predatorpreyprinter',
-                                    predatornames = c( c('lln','bmt','gil'),pre.fleet.names,'foreign'),
+                                    predatornames = c(ref.fleet,pre.fleets$fleet_name[1],pre.fleet.names,'foreign'),
                                     preynames = c(imm.stock,mat.stock),
                                     areaaggfile = gadgetdata(sprintf('Aggfiles/%s.area.agg',mat.stock),
                                                              data = data.frame(name = sprintf('area%s',stocks[[mat.stock]][[1]]$livesonareas),
@@ -481,7 +529,7 @@ print <-
                                     yearsandsteps = 'all all'),
                                list('[component]',
                                     type = 'predatorpreyprinter',
-                                    predatornames = c( c('lln','bmt','gil'),pre.fleet.names,'foreign'),
+                                    predatornames = c(ref.fleet,pre.fleet.names,'foreign'),
                                     preynames = mat.stock,
                                     areaaggfile = gadgetdata(sprintf('Aggfiles/%s.area.agg',mat.stock),
                                                              data = data.frame(name = sprintf('area%s',stocks[[mat.stock]][[1]]$livesonareas),
@@ -511,17 +559,17 @@ run.func <- function(x,asserr=TRUE,btrigger=FALSE){
   read.gadget.file(run.dir,'main',recursive = FALSE) %>% 
     write.gadget.file(vd,recursive=FALSE)
   print %>% write.gadget.file(vd)
-  x$lingmat.blim <- bloss
+  x$tuskmat.blim <- bloss
   if(!asserr){
-    x<-
-      x %>%
-      mutate_at(vars(matches("asserr")),function(x) 1)
+      x<-
+          x %>%
+          mutate_at(vars(matches("asserr")),function(x) 1)
   }
-  
+
   if(btrigger){
-    x <-
-      x %>%
-      mutate_at(vars(matches("btrigger")),function(x) bpa)
+      x <-
+          x %>%
+          mutate_at(vars(matches("btrigger")),function(x) bpa)
   }
   write.gadget.parameters(x,file=paste(curr.dir,'params.pre',sep='/'),columns = FALSE)
   
@@ -529,94 +577,115 @@ run.func <- function(x,asserr=TRUE,btrigger=FALSE){
              main=attr(vd,'mainfile'),
              i=paste(curr.dir,'params.pre',sep='/'),
              ignore.stderr = FALSE,
-             gadget.exe = '~/bin/gadget')
+#             gadget.exe = '~/bin/gadget')
+             gadget.exe = '~/Documents/gadget/gadget')
   list.files(paste(curr.dir,'out',sep='/'),full.names = TRUE) %>%
-
     purrr::set_names(.,.) %>% 
     purrr::map(readoutput) 
 }
 
 attr(params.pre,'run_id') <- 'tmp'
 
-tmp <- run.func(params.pre %>% select(-repl) %>% filter(lln.hr.high %in% c(0,0.18)))
+tmp <- run.func(params.pre %>% select(-repl) %>% filter(comm.hr.high %in% c(0,0.13)))
 
 names(tmp) <- names(tmp) %>% str_split('/') %>% map(~tail(.,1)) %>% unlist()
 
+lastadviceyear <- main[[1]]$timefile[[1]]$lastyear + 4
 
 progn <- 
   tmp$catch.F %>% 
-  filter(year < 2021) %>%
+  filter(year < lastadviceyear) %>%
   group_by(year,trial) %>% 
   summarise(F=mean(mortality)) %>% 
   left_join(tmp$refbio %>% 
-              filter(step==2,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(refbio=sum(number*mean_weight))) %>% 
-  left_join(tmp$lingmat.ssb %>% 
-              filter(step==1,year < 2021) %>% 
+  left_join(tmp$tuskmat.ssb %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(ssb=sum(number*mean_weight))) %>% 
   left_join(tmp$totalbio %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(totalbio=sum(number*mean_weight))) %>% 
   left_join(tmp$catch.lw %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(catch=sum(biomass_consumed))) %>% 
-  left_join(tmp$lingimm.rec %>% 
-              filter(year < 2021) %>% 
+  left_join(tmp$tuskimm.rec %>% 
+              filter(year < lastadviceyear) %>% 
               select(year,rec=number,trial)) %>% 
   left_join(tmp$refbio %>% 
               mutate(bio = number*mean_weight) %>% 
               left_join(tmp$catch.lw %>% 
-                          select(year,step,trial,catch=sum(biomass_consumed))) %>% 
+                          select(year,step,trial,catch=biomass_consumed)) %>% 
               mutate(hr=4*catch/bio) %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               group_by(year,trial) %>% 
               summarise(hr=mean(hr)))
 
 progn_by_adyear <- 
   tmp$catch.F %>% 
   mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-  filter(ad.year < 2021) %>%
+  filter(ad.year < lastadviceyear) %>%
   group_by(ad.year,trial) %>% 
   summarise(F=mean(mortality)) %>% 
   left_join(tmp$refbio %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(step==2,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(refbio=sum(number*mean_weight))) %>% 
-  left_join(tmp$lingmat.ssb %>% 
+  left_join(tmp$tuskmat.ssb %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(ssb=sum(number*mean_weight))) %>% 
   left_join(tmp$totalbio %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(step==1,year < 2021) %>% 
+              filter(step==1,year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(totalbio=sum(number*mean_weight))) %>% 
   left_join(tmp$catch.lw %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(catch=sum(biomass_consumed))) %>% 
-  left_join(tmp$lingimm.rec %>% 
+  left_join(tmp$tuskimm.rec %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               select(ad.year,rec=number,trial)) %>% 
   left_join(tmp$refbio %>% 
               mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/')),
                      bio = number*mean_weight) %>% 
               left_join(tmp$catch.lw %>% 
                           mutate(ad.year = ifelse(step==4,paste(year,year+1,sep='/'),paste(year-1,year,sep='/'))) %>% 
-                          select(ad.year,step,trial,catch=sum(biomass_consumed))) %>% 
+                          select(ad.year,step,trial,catch=biomass_consumed)) %>% 
               mutate(hr=4*catch/bio) %>% 
-              filter(year < 2021) %>% 
+              filter(year < lastadviceyear) %>% 
               group_by(ad.year,trial) %>% 
               summarise(hr=mean(hr)))
+#if(FALSE){
+  write.csv2(progn,file='tusk_progn.csv')
+  write.csv2(progn_by_adyear,file='tusk_progn_by_adyear.csv')
+#}
 
-write.csv2(progn,file='ling_progn.csv')
-write.csv2(progn_by_adyear,file='ling_progn_by_adyear.csv')
-
+#setwd('/home/pamela/Documents/Hafro/fishvice/gadget-models/08-tusk/02-growth_rest_run1')
+# fit<- gadget.fit()
+# resbyhand<-
+#   fit$res.by.year %>% 
+#   group_by(year) %>% 
+#   summarise(total.n.fit = sum(total.number, na.rm = T),
+#             total.b.fit = sum(total.biomass, na.rm = T),
+#             harv.b.fit = sum(harv.biomass, na.rm = T),
+#             ssb.fit = sum(ssb, na.rm = T),
+#             catch.fit = sum(catch, na.rm = T),
+#             F.fit = sum(F*total.number, na.rm = T)/total.n.fit,
+#             recruitment.fit = sum(recruitment, na.rm = T))
+# 
+# 
+# write.csv2(progn %>% 
+#              filter(trial==1) %>% 
+#              select(-trial) %>% 
+#              full_join(resbyhand) #%>% View()
+#            ,file='tusk_progn.fit.csv')

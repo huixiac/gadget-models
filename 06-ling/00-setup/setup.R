@@ -1,17 +1,21 @@
 library(mfdb)
 library(tidyverse)
 library(Rgadget)
+source('R/utils.R')
 bootstrap <- FALSE
 ## Create a gadget directory, define some defaults to use with our queries below
 gd <- gadget_directory("06-ling/12-new_ass")
 mdb<-mfdb('Iceland',db_params=list(host='hafgeimur.hafro.is'))
-
-year_range <- 1982:2017
+  vers <- c('12-new_ass', '02-growth_rest')[2]
+  year_range <- 1982:2018
 base_dir <- '06-ling'
 mat_stock <- 'lingmat'
 imm_stock <- 'lingimm'
 stock_names <- c(imm_stock,mat_stock)
 species_name <- 'ling'
+## Create a gadget directory, define some defaults to use with our queries below
+gd <- gadget_directory(sprintf(paste0("%s/",vers),base_dir))
+mdb<-mfdb('Iceland')#,db_params=list(host='hafgeimur.hafro.is'))
 
 reitmapping <- 
   read.table(
@@ -43,7 +47,10 @@ gadget_dir_write(gd,.)
 
 source('R/utils.R')
 source('06-ling/00-setup/setup-fleets.R')
-source('06-ling/00-setup/setup-model.R')
+if(vers=='02-growth_rest'|vers=='05-2017noage_growth_rest'){
+  source(sprintf('%s/00-setup/setup-model_growth_rest.R',base_dir))
+} else {
+  source(sprintf('%s/00-setup/setup-model.R',base_dir))}
 source('06-ling/00-setup/setup-catchdistribution.R')
 source('06-ling/00-setup/setup-indices.R')
 source('06-ling/00-setup/setup-likelihood.R')

@@ -12,5 +12,9 @@ tmp <- gadget.iterative(rew.sI=TRUE,
 
 print('Running analytical retro')
 
+<<<<<<< HEAD
 gadget.retro(mainfile = 'WGTS/main.final',params.file = 'params.init')
+=======
+try(gadget.retro(mainfile = 'WGTS/main.final',params.file = 'params.init'), silent = T)
+>>>>>>> f4d62caf1e401700def77b61e90fc2cf43ebc725
 
