@@ -1,0 +1,1409 @@
+\documentclass[sansserif]{beamer}\usepackage[]{graphicx}\usepackage[]{color}
+%% maxwidth is the original width if it is less than linewidth
+%% otherwise use linewidth (to make sure the graphics do not exceed the margin)
+\makeatletter
+\def\maxwidth{ %
+  \ifdim\Gin@nat@width>\linewidth
+    \linewidth
+  \else
+    \Gin@nat@width
+  \fi
+}
+\makeatother
+
+\definecolor{fgcolor}{rgb}{0.345, 0.345, 0.345}
+\newcommand{\hlnum}[1]{\textcolor[rgb]{0.686,0.059,0.569}{#1}}%
+\newcommand{\hlstr}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+\newcommand{\hlcom}[1]{\textcolor[rgb]{0.678,0.584,0.686}{\textit{#1}}}%
+\newcommand{\hlopt}[1]{\textcolor[rgb]{0,0,0}{#1}}%
+\newcommand{\hlstd}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlkwa}[1]{\textcolor[rgb]{0.161,0.373,0.58}{\textbf{#1}}}%
+\newcommand{\hlkwb}[1]{\textcolor[rgb]{0.69,0.353,0.396}{#1}}%
+\newcommand{\hlkwc}[1]{\textcolor[rgb]{0.333,0.667,0.333}{#1}}%
+\newcommand{\hlkwd}[1]{\textcolor[rgb]{0.737,0.353,0.396}{\textbf{#1}}}%
+\let\hlipl\hlkwb
+
+\usepackage{framed}
+\makeatletter
+\newenvironment{kframe}{%
+ \def\at@end@of@kframe{}%
+ \ifinner\ifhmode%
+  \def\at@end@of@kframe{\end{minipage}}%
+  \begin{minipage}{\columnwidth}%
+ \fi\fi%
+ \def\FrameCommand##1{\hskip\@totalleftmargin \hskip-\fboxsep
+ \colorbox{shadecolor}{##1}\hskip-\fboxsep
+     % There is no \\@totalrightmargin, so:
+     \hskip-\linewidth \hskip-\@totalleftmargin \hskip\columnwidth}%
+ \MakeFramed {\advance\hsize-\width
+   \@totalleftmargin\z@ \linewidth\hsize
+   \@setminipage}}%
+ {\par\unskip\endMakeFramed%
+ \at@end@of@kframe}
+\makeatother
+
+\definecolor{shadecolor}{rgb}{.97, .97, .97}
+\definecolor{messagecolor}{rgb}{0, 0, 0}
+\definecolor{warningcolor}{rgb}{1, 0, 1}
+\definecolor{errorcolor}{rgb}{1, 0, 0}
+\newenvironment{knitrout}{}{} % an empty environment to be redefined in TeX
+
+\usepackage{alltt} % options: gray
+
+
+% HANDOUTS
+%\documentclass[handout,mathserif]{beamer} % options: gray
+\geometry{paperwidth=170mm,paperheight=105mm}
+\usepackage{scrextend}
+\changefontsizes{10pt}
+\usetheme{CambridgeUS} %sidebar
+\usecolortheme{dolphin}
+\definecolor{hafroblar}{HTML}{0076a9}
+\definecolor{hafrograr}{HTML}{5c6670}
+\setbeamercolor*{palette primary}{use=structure,fg=white,bg=hafrograr!25}
+\setbeamercolor*{palette secondary}{use=structure,fg=white,bg=hafrograr!50}
+\setbeamercolor*{palette tertiary}{use=structure,fg=white,bg=hafroblar}
+\setbeamercolor*{palette quaternary}{fg=white,bg=hafrograr!25}
+
+\setbeamercolor{frametitle}{bg=white,fg=hafrograr}
+\setbeamercolor{title}{bg=white,fg=hafroblar}
+
+
+
+%\usecolortheme{rose}
+
+
+
+\usepackage{graphicx}
+\usepackage{amssymb,amsmath}
+\usepackage[T1]{fontenc}
+\usepackage[icelandic]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{bm}
+\usepackage{textpos}
+\usepackage{marvosym}
+\usepackage{subfigure}
+\usepackage{pgfpages}
+\usepackage{multirow}
+\usepackage{wrapfig}
+
+\usepackage{multirow,adjustbox,rotating}
+
+\usepackage{tikz,makecell}
+\usetikzlibrary{arrows,decorations.pathmorphing,decorations.footprints,
+fadings,calc,trees,mindmap,shadows,decorations.text,patterns,positioning,shapes,matrix,fit}
+\input{graphical_settings}
+\tikzset{
+  invisible/.style={opacity=0},
+  visible on/.style={alt={#1{}{invisible}}},
+  alt/.code args={<#1>#2#3}{%
+    \alt<#1>{\pgfkeysalso{#2}}{\pgfkeysalso{#3}} % \pgfkeysalso doesn't change the path
+  },
+}
+
+% hvis man vil har eg. 4 slides på en side
+%\pgfpagesuselayout{4 on 1}[a4paper,border shrink = 5mm, landscape]
+
+\definecolor{lgrey}{RGB}{245,245,245}
+\setbeamercolor{block body}{fg=black,bg=lgrey}
+
+\newcommand{\bs}{\boldsymbol}
+\newcommand{\bi}{\begin{itemize}\item}
+\newcommand{\ei}{\end{itemize}}
+\newcommand{\eq}[1]{\begin{equation*} #1 \end{equation*}}
+\newcommand{\ea}[1]{\begin{eqnarray} #1 \end{eqnarray}}
+\newcommand{\vs}{\vspace{2mm}}
+
+\logo{\includegraphics[height=0.8cm]{hafro_logo}}
+\newcommand{\nologo}{\setbeamertemplate{logo}{}}
+
+
+\definecolor{Red}{rgb}{0.9,0,0.1}
+
+\title[Icelandic gadoids]{Assessment of Ling in 5a}
+\subtitle{\small }
+\author[Thorlacius et. al]{Magnús Thorlacius}
+\date{} % beskidt .. men det virker
+\institute[MFRI]{}
+\beamertemplatenavigationsymbolsempty % fjerner pdf-indhold, til hvis der bare skal printes slides ud
+
+%\AtBeginSection[]{
+%\begin{frame}<beamer>
+%   \frametitle{What next...}
+%   \tableofcontents[currentsection]
+% \end{frame}
+%}
+
+\theoremstyle{example}
+\newtheorem{exis}[theorem]{Dæmi}
+\renewenvironment{example}{\begin{exis}}{\end{exis}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\begin{document}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+{
+\nologo
+\frame{
+
+\titlepage
+
+\begin{tikzpicture}
+\node[inner sep=0pt] (matis) at (12,0)
+    {\includegraphics[width=.25\textwidth]{hafro_logo}};
+
+\end{tikzpicture}
+
+%
+% \begin{columns}
+% \begin{column}{0.25\linewidth}
+% \includegraphics[width=0.8\textwidth]{MareFrame_logo_A0_staerd}\\
+% \end{column}
+% \begin{column}{0.25\linewidth}
+% \includegraphics[width=0.5\linewidth]{matis}
+% \end{column}
+% \begin{column}{0.25\linewidth}
+% \includegraphics[width=0.9\linewidth]{ui_logo}
+% \end{column}
+% \begin{column}{0.25\linewidth}
+% \includegraphics[width=0.9\linewidth]{hafro_logo}
+% \end{column}
+% \end{columns}
+}
+}
+
+
+\frame{
+\frametitle{Settings}
+\bi Two stock model: immature and mature
+\bi Age: 3--10 and 5--15
+\item Length: 20--160 cm, $\Delta l$ 4 cm
+\item Length based maturation function
+\item Natural mortality set to be 0.15 for all years
+\item Length based Von Bertalanffy growth
+\item Annual recruitment of 3 year olds
+\ei
+\item Five fleets: survey, longlines, bottom trawlers, gillnets and foreign vessels
+\item Model time: 1982--2017, quarterly timestep
+\item A total of 71 parameters estimated
+\ei
+
+}
+
+\frame{
+\frametitle{Observational data}
+\bi Survey indices from the Icelandic groundfish survey from 1984:
+  \bi si.20-50
+  \item si.50-60
+  \item si.60-70
+  \item si.70-80
+  \item si.80-90
+  \item si.90-100
+  \item si.100-160
+\ei
+\item Survey samples from 1984 (as available):
+  \bi ldist.igfs: proportion at length
+  \item aldist.igfs: proportion at length and age
+  \item matp.igfs: proportion mature at length
+  \ei
+\item Commercial samples from 1982 (as available)
+\bi ldist.lln, gil, bmt:  proportion at length by gear
+\item aldist.lln, gil, bmt:  proportion at length and age by gear
+\ei
+\item Commercial catches by gear since 1982
+\ei
+}
+
+\frame{
+\frametitle{Location of samples}
+
+\includegraphics[width=\maxwidth]{figure/divisionplot-1} 
+
+
+}
+
+
+
+\frame{
+\frametitle{Landings data}
+
+\begin{columns}
+\begin{column}{0.5\linewidth}
+Sources of landings data:
+\bi Landings of Icelandic vessels:
+  \bi Pre 1993: landings by port from Fiskifélagið
+  \item Post 1993: Directorate of fisheries, catches reported by vessel
+  \ei
+\item Landings of foreign vessels:
+  \bi Pre 2014: Statlant
+  \item Post 2014: Directorate of fisheries, catches reported by vessel
+  \ei
+\ei
+
+\end{column}
+\begin{column}{0.5\linewidth}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-2-1} 
+
+\end{knitrout}
+\end{column}
+\end{columns}
+}
+
+
+
+\begin{frame}
+\frametitle{Survey indices}
+\begin{columns}
+\begin{column}{0.3\linewidth}
+\begin{table}[!h]
+{\centering \tiny
+\scriptsize
+\begin{tabular}{l r r}
+\toprule
+Name& min& max \\ \midrule
+si.20-50 & 20 & 52\\ 
+si.50-60 & 52 & 60\\ 
+si.60-70 & 60 & 72\\ 
+si.70-80 & 72 & 80\\ 
+si.80-90 & 80 & 92\\ 
+si.90-100 & 92 & 100\\ 
+si.100-160 & 100 & 160\\
+
+
+
+\bottomrule
+\end{tabular}
+\par}
+\end{table}
+
+\end{column}
+\begin{column}{0.7\linewidth}
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-4-1} 
+
+\end{column}
+\end{columns}
+\end{frame}
+
+\frame{
+\frametitle{Available samples on length}
+
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-5-1} 
+
+}
+
+
+\frame{
+\frametitle{Available samples on age}
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-6-1} 
+
+
+}
+
+\frame{
+\frametitle{Objective function}
+\bi The total objective function used the modeling process combines the contribution of each data set using the following formula:
+
+
+\begin{equation}\label{eq:loglik}
+l^{\textup{T}} = \sum_g  w_{gf}^{\textup{SI}}
+l_{g,S}^{\textup{SI}} + \sum_{f\in \{S,C\}} \left(
+  w_{f}^{\textup{LD}}  l_{f}^{\textup{LD}} + w_{f}^{\textup{AL}}
+  l_{f}^{\textup{AL}}\right) + w^{\textup{M}}l^{\textup{M}}
+\end{equation}
+where $f=S$, $L$, $G$, $B$ denotes the spring survey, and the commercial fleets respectively
+and $w$'s are the weights assigned to each likelihood component.
+\item For each length range $g$ the survey index is compared to the modeled
+abundance at year $y$ and time-step $t$ using:
+\begin{equation}\label{eq:SSSI}
+  l_{g}^{\textup{SI}} = \sum_{y} \sum_t (\log I_{gy} - (\log q_g + b_g \log \widehat{N_{gyt}}))^2
+\end{equation}
+where $$\widehat{N_{gyt}} = \sum_{l\in g} \sum_a \sum_s N_{alsyt}$$
+\item For compositional data the likelihood is of the form:
+\begin{equation}\label{eq:SSldist}
+  l_f^{\textup{LD}} = \sum_y \sum_t \sum_l (\pi_{flyt} - \hat{\pi}_{flyt})^2
+\end{equation}
+\ei
+
+}
+
+\frame{
+\frametitle{Weighting heuristic}
+\begin{enumerate}
+\item Calculate the initial sums of squares (SS) given the initial
+  parametrization for all likelihood components. Assign the inverse SS
+  as the initial weight for all likelihood components.
+\item For each likelihood component, do an optimization run with
+  the initial SS for that component set to 10000. Then estimate the
+  residual variance using the resulting SS of that component divided
+  by the degrees of freedom ($df^*$), i.e. $\hat{\sigma}^2 = \frac{SS}{df^*}$.
+\item  After the optimization set the final weight for that all
+  components as the inverse of the estimated variance from the step above
+  (weight $=1/\hat{\sigma}^2$).
+\end{enumerate}
+
+}
+
+
+
+\frame{
+\frametitle{Uncertainty estimates}
+
+\includegraphics[width=\maxwidth]{figure/divisionplot2-1} 
+
+}
+
+\frame{
+\frametitle{Order of calculations}
+The order of calculations is as follows:
+\begin{enumerate}
+\item \textbf{Printing}: model output at the beginning of the time-step
+\item \textbf{Consumption}: mainly fleet harvesting
+\item \textbf{Natural mortality}: Natural mortality is applied after consumption
+\item \textbf{Growth}: length update is applied
+\item \textbf{Maturation}: maturing fish moved from one stock component to the other
+\item \textbf{Spawning and recruitment}: New individuals enter the immature stock component
+\item \textbf{Likelihood comparison}: likelihood score is calculated here, note that the comparison is based on the modeled processes in previous steps
+\item \textbf{Printing}: model output at the end of the time-step
+\item \textbf{Aging}: if this is the end of year the age is increased
+\end{enumerate}
+}
+
+
+\frame{
+\frametitle{Likelihood values - compositional data}
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-7-1} 
+
+
+}
+
+\frame{
+\frametitle{Likelihood values - survey indices}
+
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-8-1} 
+
+
+
+}
+
+
+
+
+\frame{
+\frametitle{Recruitment parameters}
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-9-1} 
+
+}
+
+\frame{
+\frametitle{Initial population}
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-10-1} 
+
+
+}
+
+\frame{
+\frametitle{Survey catchability}
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-11-1} 
+
+
+}
+
+\frame{
+\frametitle{Fit to data -- Indices}
+
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-12-1} 
+
+
+}
+
+
+\frame{
+\frametitle{Fit to length distributions}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/bubbleplot-1} 
+
+\end{knitrout}
+
+}
+
+\frame{
+\frametitle{Fit to data -- survey length distributions}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-13-1} 
+
+\end{knitrout}
+}
+
+\frame{
+\frametitle{Fit to data -- longline length distributions}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-14-1} 
+
+\end{knitrout}
+
+}
+
+
+\frame{
+\frametitle{Fit to age distributions}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/agebubbleplot-1} 
+
+\end{knitrout}
+
+}
+
+
+\frame{
+\frametitle{Fit to data -- survey age distributions}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-15-1} 
+
+\end{knitrout}
+
+}
+
+\frame{
+\frametitle{Fit to data -- survey growth data}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-16-1} 
+
+\end{knitrout}
+
+
+}
+
+
+
+\frame{
+\frametitle{Fit to data -- longline age distributions}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-17-1} 
+
+\end{knitrout}
+}
+
+\frame{
+\frametitle{Fit to data -- longline growth data}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-18-1} 
+
+\end{knitrout}
+
+
+}
+
+\frame{
+\frametitle{Fit to data -- survey maturity}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-19-1} 
+
+\end{knitrout}
+}
+
+
+\frame{
+\frametitle{Assessment results}
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-20-1} 
+
+
+}
+
+
+
+\frame{
+\frametitle{Analytical retrospective}
+# <<echo=FALSE,results='asis',fig.width=10, fig.height=5,warning=FALSE,message=FALSE>>=
+# retro.res <-
+#   retro.fit$res.by.year %>%
+#   bind_rows(fit$res.by.year %>% dplyr::mutate(model="0")) %>%
+#   group_by(year,model) %>%
+#   dplyr::summarise(tb=sum(total.biomass),
+#             ssb=sum(total.biomass[grepl('mat',stock)]),
+#             F = max(F),
+#             catch = sum(catch),
+#             #hb=sum(harv.biomass),
+#             rec=sum(recruitment,na.rm=TRUE)) %>%
+#   left_join(retro.fit$stock.full %>%
+#               filter(length>ref.cm) %>%
+#               group_by(year,model) %>%
+#               dplyr::summarise(hb=sum(number*mean.weight))) %>%
+#   mutate(hr = catch/hb)
+# 
+# 
+# 
+# rbio.plot <-
+#   bio.plot +
+#   geom_line(data= retro.res %>%
+#               select(year,tb,hb,model) %>%
+#               gather(col,value,-c(year,model)) %>%
+#               dplyr::mutate(value=value/1e6),
+#             aes(year,value,lty=model,group=interaction(model,col)),col='red') +
+#   guides(linetype=FALSE)
+# 
+# rssb.plot <-
+#   ssb.plot +
+#   geom_line(data= retro.res %>%
+#               select(year,value=ssb,model) %>%
+#               #gather(col,value,-c(year,model)) %>%
+#               dplyr::mutate(value=value/1e6),
+#             aes(year,value,lty=model,group=model),col='red')
+# 
+#   #ggplot(aes(year,value,lty=model,col=col)) + geom_line() +
+#   #theme_light() +
+# #  labs(y='Biomass (in kt)',x='Year')+
+# #  theme(legend.position = 'none')+ expand_limits(y=0)
+# 
+# rF.plot <-
+#  F.plot +
+#   geom_line(data=retro.res %>%
+#               select(year,value=F,m=model),
+#             aes(y=value,lty=m,group=m),col='red') +
+#     geom_line(data=retro.res %>%
+#               select(year,value=hr,m=model),
+#             aes(y=value,lty=m,group=m),col='red') +
+#   theme(legend.position = 'none')
+#   #gather(col,value,-c(year,model)) %>%
+#   #mutate(value=value/1e6) %>%
+#   #ggplot(aes(year,value,lty=model)) + geom_line() +
+#   #theme_light() +
+#   #labs(y='Fishing mortality',x='Year')+
+#   #theme(legend.position = 'none')+ expand_limits(y=0)
+# 
+# 
+# rrec.plot <-
+#   rec.plot +
+#   geom_line(data = retro.res %>%
+#               select(year,value=rec,model) %>%
+#               dplyr::mutate(value=value/1e6),
+#             aes(year,value,lty=model,group=model),col='red')+
+#   theme(legend.position = 'none')
+# 
+# gridExtra::grid.arrange(rbio.plot,rssb.plot, rF.plot,rrec.plot,ncol=2)
+ @
+}
+
+\frame{
+\frametitle{Comparison with previous assessment}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}
+\includegraphics[width=\maxwidth]{figure/oldvsnew-1} 
+
+\end{knitrout}
+}
+
+
+\frame{
+\frametitle{Fleet selection}
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-21-1} 
+
+
+}
+
+\frame{
+\frametitle{SSB-Rec relationship}
+[1] 9.56784
+
+\includegraphics[width=\maxwidth]{figure/unnamed-chunk-22-1} 
+
+
+}
+
+\frame{
+\frametitle{Summary of reference points}
+\bi The managment rule takes the form of $C_y = H B_{75cm^+}$
+\item Last year a management strategy evaluation was performed to set H based on the following reference points.
+\item No evidence of impaired recruitment and fishing mortality is considered to have been low
+\item $B_{loss} = 9.93 kt$ (min SSB of the time series) was set to for $B_{pa}$
+\item $B_{lim} = B_{pa}/1.4 = 7.09$
+\item $H_{lim}$ determined as the harvest rate that has 50\% chance of SSB being at $B_{lim}$ via stochastic simulation without assessment error
+\item Variability in recruitment is based on a block bootstrap of estimated recruitment, block size of 6 consecutive years.
+\item $F_{lim}$, $F_{pa}$ and $H_{pa}$ were based on the estimate of $H_{lim}$
+\item $H_{msy}$ was based on simulation with assessment error (lognormal with $\rho = 0.8$, and $\sigma$ as the CV of $B_{75cm^+}$)
+\ei
+}
+
+%I believe this next frame can be commented out and moved to the end
+\frame{
+\frametitle{Equilibrium yield and SSB}
+
+}
+
+
+\frame{
+\frametitle{Projections}
+
+\item will be replaced with projection plots of this years prognosis
+
+}
+
+\frame{
+\frametitle{Accepted management plan}
+\begin{knitrout}
+\definecolor{shadecolor}{rgb}{0.969, 0.969, 0.969}\color{fgcolor}\begin{kframe}
+
+
+{\ttfamily\noindent\bfseries\color{errorcolor}{\#\# Error in eval\_tidy(xs[[i]], unique\_output): object 'bpa' not found}}\end{kframe}
+\end{knitrout}
+
+}
+
+
+\begin{table}[!h]
+\vspace{1mm}
+\caption[]
+{Ling in 5a. Summary of reference point proposed for ling in 5a. }\label{tbl:refpoint}
+\vspace{2mm}
+{\centering
+\scriptsize
+\begin{tabular}{p{2.5cm} l r p{5cm} }
+\toprule
+Framework & Reference point & Value & Technical basis \\ \midrule
+MSY approach & MSY $B_{trigger}$ &  9.93 kt & $B_{pa}$ \\
+            & $H_{msy}$ & 0.24 & The harvest rate that maximises the median long-term catch in stochastic simulations with recruitment drawn from a block bootstrap of historical recruitment scaled according to a hockey stick recruitment function with $B_{loss}$ as defined below.\\
+            & $F_{msy}$ & 0.284 & The median fishing mortality when an harvest rate of $H_{msy}$ is applied. \\
+            & $H_{p.05}$ & 0.497 & The harvest rate that has an annual probability of 5\% of SSB < $B_lim$.\\
+            & $F_{p.05}$ & 0.516 &  The median fishing mortality when an harvest rate of $H_{p.05}$ is applied.\\
+\hline
+Precautionary approach & $B_{lim}$ & 7.09 kt & $B_{pa}/e^{1.645\sigma}$ where $\sigma=0.2$ \\
+                      & $B_{pa}$ & 9.93 kt & SSB(1992), corresponding to $B_{loss}$ \\
+                      & $H_{lim}$ & 0.56 & $H$ corresponding to 50\% long-term probability of SSB > $B_{lim}$ \\
+                      & $F_{lim}$ & 0.70 & F corresponding to $H_{lim}$ \\
+                      & $F_{pa}$ &  0.41 & $F_{lim}/e^{1.645\sigma}$ where $\sigma=0.33$\\
+                      & $H_{pa}$ & 0.35 & H corresponding to $F_{pa}$ \\
+\hline
+Management plan & $H_{mp}$ & 0.18 & $H$ such that $P(SSB<B_{pa}|\textup{for any given year})<0.05$. \\
+\bottomrule
+\end{tabular}
+\par}
+\end{table}
+
+}
+\end{document}
+
+
+
+% \frame{
+% \frametitle{Fit to survey indices}
+% <<echo=FALSE,results='asis',fig.width=10, fig.height=5,cache=TRUE,warning=FALSE,message=FALSE>>=
+% fit$sidat %>%
+%   ggplot(aes(log(predict),log(number.x))) +
+%   geom_line(aes(log(number.x),log(number.x)),lty=2) +
+%   geom_line(aes(log(predict),log(predict)),lty=2) +
+%   facet_wrap(~name, scale='free') +
+%   geom_text(aes(label=year),size=3) +
+%   #scale_x_log10() +
+%   #scale_y_log10() +
+%   theme_light() +
+%   labs(y='log(Observed)',x='log(Predicted)')+
+%   geom_label(data=fit$sidat %>%
+%               select(name,slope,sse) %>%
+%               distinct() %>%
+%               dplyr::mutate(label=paste(name,paste0('sse:',sse),sep='\n')),
+%             aes(label=label),x=Inf,y=-Inf,size=3, vjust = -0.1,hjust=1.1) +
+%   theme(strip.background = element_blank(),strip.text=element_blank())
+% 
+% @
+% }
+
+
+% \frame{
+% \frametitle{Parameter correlations}
+% <<echo=FALSE,results='asis',fig.width=10, fig.height=5,cache=TRUE,warning=FALSE,message=FALSE>>=
+% fit$params %>%
+%   filter(optimise==1,
+%          !grepl('rec\\.[0-9]',switch),
+%          !grepl('init\\.[0-9]',switch),
+%          !grepl('scalar',switch)) %>%
+%   mutate(switch = gsub('^[A-Za-z]+\\.','',switch),
+%          value = ifelse(grepl('k$|mat1$',switch),0.001*value,value),
+%          label = forcats::fct_recode(switch,
+%                                      'beta' = "bbin",
+%                                      'alpha[c]' = 'comm.alpha',
+%                                      'l[50][c]' ='comm.l50',
+%                                      'alpha[s]' = 'igfs.alpha',
+%                                      'l[50][s]'='igfs.l50',
+%                                      'F[0]'='init.F',
+%                                      'L[infinity]'='Linf',
+%                                      'lambda'='mat1',
+%                                      'l[50]'='mat2',
+%                                      'sigma[0]'='rec.sd',
+%                                      'l[0]'='recl' )) %>%
+%   select(model,switch,value) %>% spread(switch,value) %>% select(-model) %>%
+%   GGally::ggpairs() +
+%   theme_light()
+% @
+% 
+% }
+
+
+% \frame{
+% \frametitle{Parameter estimates}
+% <<echo=FALSE,results='asis',fig.width=10, fig.height=5,cache=TRUE,warning=FALSE,message=FALSE>>=
+% fit$params %>%
+%   #filter(!(model %in% c(22,70,73,24,56,64)))%>%
+%   filter(optimise==1,
+%          !grepl('rec\\.[0-9]',switch),
+%          !grepl('init\\.[0-9]',switch),
+%          !grepl('scalar',switch)) %>%
+%   mutate(switch = gsub('^[A-Za-z]+\\.','',switch),
+%          value = ifelse(grepl('k$|mat1$',switch),0.001*value,value),
+%          label = forcats::fct_recode(switch,
+%                                      'beta' = "bbin",
+%                                      'alpha[g]' = 'gil.alpha',
+%                                       'l[50][g]' ='gil.l50',
+%                                      'alpha[l]' = 'lln.alpha',
+%                                       'l[50][l]' ='lln.l50',
+%                                      'alpha[t]' = 'bmt.alpha',
+%                                       'l[50][t]' ='bmt.l50',
+%                                      'alpha[s]' = 'igfs.alpha',
+%                                       'l[50][s]'='igfs.l50',
+%                                      'F[0]'='init.F',
+%                                      'L[infinity]'='Linf',
+%                                      'lambda'='mat1',
+%                                      'l[50]'='mat2',
+%                                      'sigma[0]'='rec.sd',
+%                                       'l[0]'='recl'  )) %>%
+%   ggplot(aes(value)) + geom_histogram(fill='gray')+
+%   facet_wrap(~label,scale='free',labeller = label_parsed) +
+%   geom_vline(aes(xintercept=value),
+%              col='red',
+%              data=fit$params %>%
+%                filter(optimise==1,
+%                       !grepl('rec\\.[0-9]',switch),
+%                       !grepl('init\\.[0-9]',switch),
+%                       !grepl('scalar',switch)) %>%
+%               mutate(switch = gsub('^[A-Za-z]+\\.','',switch),
+%                      value = ifelse(grepl('k$|mat1$',switch),0.001*value,value),
+%                      label = forcats::fct_recode(switch,
+%                                      'beta' = "bbin",
+%                                      'alpha[g]' = 'gil.alpha',
+%                                       'l[50][g]' ='gil.l50',
+%                                      'alpha[l]' = 'lln.alpha',
+%                                       'l[50][l]' ='lln.l50',
+%                                      'alpha[t]' = 'bmt.alpha',
+%                                       'l[50][t]' ='bmt.l50',
+%                                      'alpha[s]' = 'igfs.alpha',
+%                                       'l[50][s]'='igfs.l50',
+%                                      'F[0]'='init.F',
+%                                      'L[infinity]'='Linf',
+%                                      'lambda'='mat1',
+%                                      'l[50]'='mat2',
+%                                      'sigma[0]'='rec.sd',
+%                                       'l[0]'='recl' ))) +
+%   theme_light() +
+%   labs(x='Parameter value',y='% iterations')
+% 
+% @
+% }
+%
+% \frame{
+% \frametitle{Survey indices}
+% \begin{columns}
+% \begin{column}{0.5\linewidth}
+% <<echo=FALSE,results='asis'>>=
+% fit$sidat %>%
+%   filter(!is.na(number.x)) %>%
+%   group_by(name,length) %>%
+%   dplyr::summarise(n=sum(number.x),range=paste(lower,upper,sep=' -- ')[1],or=lower[1]) %>%
+%   arrange(or) %>%
+%   select(name,range,n) %>%
+%   knitr::kable()
+% @
+% \end{column}
+% \begin{column}{0.5\linewidth}
+% <<echo=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='ldist.igfs',year %in% 2010:2013) %>%
+%   ggplot(aes(lower,number.x))+
+%   geom_rect(fill='darkblue',alpha=0.01,xmin=20,xmax=52,ymin=-Inf,ymax=Inf)+
+%   geom_rect(fill='darkblue',alpha=0.01,xmin=60,xmax=72,ymin=-Inf,ymax=Inf)+
+%   geom_rect(fill='darkblue',alpha=0.01,xmin=80,xmax=92,ymin=-Inf,ymax=Inf)+
+%   geom_rect(fill='darkblue',alpha=0.01,xmin=100,xmax=160,ymin=-Inf,ymax=Inf)+
+%   geom_line() + facet_wrap(~year,scale='free_y') +
+%   theme_minimal() + labs(x='Length', y='Number observed')
+% @
+% \end{column}
+% \end{columns}
+% }
+%
+% \frame{
+% \frametitle{Available samples from the Icelandic groundfish survey}
+% <<echo=FALSE,results='asis',fig.width=10, fig.height=5>>=
+% fit$catchdist.fleets %>%
+%   filter(name %in% c('aldist.igfs','ldist.igfs')) %>%
+%   group_by(name,year) %>%
+%   dplyr::summarise(n=sum(number.x,na.rm=TRUE)) %>%
+%   bind_rows(fit$stockdist %>%
+%               as.data.frame() %>%
+%               select(year,name,number.x) %>%
+%               group_by(year,name) %>%
+%               dplyr::summarise(n=sum(number.x,na.rm=TRUE))) %>%
+%   ggplot(aes(year,n)) + geom_bar(stat = 'identity',fill='#0076a9') + facet_wrap(~name,ncol=1,scale='free_y') +
+%   theme_minimal() +
+%   labs(y='Num. samples',x='Year')
+% @
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Available samples from commercial catches}
+% <<echo=FALSE,results='asis',fig.width=10, fig.height=5,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(!(name %in% c('aldist.igfs','ldist.igfs','matp.igfs'))) %>%
+%   group_by(name,year) %>%
+%   dplyr::summarise(n=sum(number.x,na.rm=TRUE)) %>%
+%   mutate(type = ifelse(grepl('aldist',name),'Age - Length','Length'),
+%          gear = gsub('[a-z]+\\.','',name))%>%
+%   ggplot(aes(year,n,fill=gear)) + geom_bar(stat = 'identity') + facet_wrap(~type,ncol=1,scale='free_y') +
+%   theme_minimal() +
+%   labs(y='Num. samples',x='Year') +
+%   theme(legend.position = c(0.1,0.8))
+% @
+%
+% }
+%
+% \frame{
+% \frametitle{Landings data}
+%
+% \begin{columns}
+% \begin{column}{0.5\linewidth}
+% Sources of landings data:
+% \bi Landings of Icelandic vessels:
+%   \bi Pre 1993: landings by port from Fiskifélagið
+%   \item Post 1993: Directorate of fisheries, catches reported by vessel
+%   \ei
+% \item Landings of foreign vessels:
+%   \bi Pre 2014: Statlant
+%   \item Post 2014: Directorate of fisheries, catches reported by vessel
+%   \ei
+% \ei
+% \end{column}
+% \begin{column}{0.5\linewidth}
+% <<echo=FALSE,cache=TRUE>>=
+% fit$fleet.info %>%
+%   filter(fleet !='igfs') %>%
+%   ggplot(aes(year,amount/1e6,fill=fleet)) + geom_bar(stat='identity') +
+%   theme_minimal() +
+%   labs(y='Landed catch (kt)',x='Year') +
+%   theme(legend.position = c(0.1,0.8))
+% @
+% \end{column}
+% \end{columns}
+% }
+%
+% \frame{
+% \frametitle{Fit to data -- Indices}
+%
+% <<echo=FALSE,fig.width=10, fig.height=5,cache=TRUE>>=
+% fit$sidat %>%
+%   mutate(group=ordered(lower,labels=paste(unique(sort(lower)),unique(sort(upper)),sep = ' - '))) %>%
+%   ggplot(aes(year,number.x)) + geom_point() +
+%   facet_wrap(~group,scale='free_y') +
+%   geom_text(data=. %>% select(group,slope,intercept,sse) %>% distinct(), aes(label=sprintf('slope=%.2f',slope)),x=1990,y=Inf,vjust=2) +
+%   theme_minimal() + geom_line(aes(y=predict)) +
+%   labs(y='Survey index',x='Year')
+% @
+%
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Fit to data -- survey length distributions}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='ldist.igfs') %>%
+%   ggplot(aes(lower,observed)) + geom_point(col='gray') +
+%   geom_segment(aes(xend=lower,yend=0),col='grey') +
+%   facet_wrap(~year) + theme_bw() +
+%   geom_line(aes(y=predicted)) + #xlim(c(25,55)) +
+%   geom_label(x=50,y=0.12,aes(label=year)) +
+%   geom_text(x=140,y=0.07,angle=90,aes(label=paste0('n = ',round(total.catch)))) +
+%   theme(strip.background = element_blank(),strip.text=element_blank()) +
+%   xlab('Length') + ylab('Proportion')
+%
+%
+% @
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Fit to data -- survey age distributions}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   dplyr::filter(name=='aldist.igfs') %>%
+%   dplyr::mutate(age=as.numeric(gsub('age','',age)),
+%                 length=as.numeric(gsub('len','',length))) %>%
+%   dplyr::group_by(year,age,step,total.catch) %>%
+%   dplyr::summarise(o=sum(observed,na.rm=TRUE),
+%                    p=sum(predicted)) %>%
+%   dplyr::mutate(o=ifelse(o==0,NA,o)) %>%
+%   ggplot(aes(age,o)) + geom_point(col='gray') +
+%   geom_segment(aes(xend=age,yend=0),col='grey') + facet_wrap(~year+step) +
+%   theme_bw() + geom_line(aes(y=p)) +
+%   geom_label(x=12,y=0.3,aes(label=year)) +
+%   geom_text(x=12,y=0.15,aes(label=paste0('n = ',total.catch))) +
+%   theme(strip.background = element_blank(),strip.text=element_blank()) +
+%   xlab('Length') + ylab('Proportion')
+% @
+%
+% }
+%
+% \frame{
+% \frametitle{Fit to data -- survey growth data}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='aldist.igfs') %>%
+%   group_by(year,step,age) %>%
+%   mutate(o=observed/sum(observed,na.rm=TRUE),p=predicted/sum(predicted)) %>%
+%   select(year,step,age,length,observed,o,predicted,p) %>%
+%   ungroup() %>%
+%   mutate(age=as.numeric(gsub('age','',age)),
+%          length=as.numeric(gsub('len','',length))) %>%
+%   group_by(year,step,age) %>%
+%   summarise(o.ml=sum(o*length,na.rm=TRUE),
+%             o.sl=sqrt(sum(o*(length - o.ml)^2,na.rm=TRUE)),
+%             p.ml=sum(p*length),
+%             p.sl=sqrt(sum(p*(length - p.ml)^2))) %>%
+%   mutate(o.ml=ifelse(o.ml==0,NA,o.ml),
+%          o.sl=ifelse(o.sl==0,NA,o.sl),
+%          upper = p.ml+1.96*p.sl,
+%          lower = p.ml-1.96*p.sl,
+%          o.upper = o.ml+1.96*o.sl,
+%          o.lower = o.ml-1.96*o.sl) %>%
+%   ggplot(aes(age,o.ml)) + geom_ribbon(fill='gold',aes(ymax=upper,ymin=lower))+geom_point(size=0.5) +
+%   geom_line(aes(y=p.ml))  + geom_linerange(aes(ymax=o.upper,ymin=o.lower))+
+%   facet_wrap(~year+step) +
+%   theme_bw() + xlab('Age') + ylab('Average length') +
+%   geom_label(x=12,y=30,aes(label=year)) +
+%   theme(strip.background = element_blank(),strip.text=element_blank())
+% @
+%
+%
+% }
+% \frame{
+% \frametitle{Fit to data -- survey maturity}
+%
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$stockdist %>%
+%   filter(stock=='lingmat') %>%
+%   ggplot(aes((upper+lower)/2,obs.ratio)) + geom_point() +
+%   geom_line(aes(y=pred.ratio))+
+%   facet_wrap(~year) + theme_minimal() +
+%   labs(y='Prop. mature',x='Length')
+% @
+%
+% }
+%
+% \frame{
+% \frametitle{Fit to data -- lln length distributions}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='ldist.lln') %>%
+%   ggplot(aes(lower,observed)) + geom_point(col='gray') +
+%   geom_segment(aes(xend=lower,yend=0),col='grey') +
+%   facet_wrap(~year+step) + theme_bw() +
+%   geom_line(aes(y=predicted)) + #xlim(c(25,55)) +
+%   geom_label(x=140,y=0.15, size = 2.5,
+%              aes(label=sprintf('%s, q%s',year,step))) +
+%   geom_text(x=140,y=0.07,angle=90,size=2.5,
+%             aes(label=paste0('n = ',round(total.catch)))) +
+%   theme(strip.background = element_blank(),strip.text=element_blank(),
+%         axis.text.y = element_blank()) +
+%   xlab('Length') + ylab('Proportion')
+%
+%
+% @
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Length bubble}
+%
+% <<echo=FALSE,message=FALSE,warning=FALSE,error=FALSE,fig.width=7,fig.height=8,eval=FALSE,dev='tikz',cache=TRUE>>=
+% fit$catchdist.fleets  %>%
+%       filter(grepl('^ldist',name),
+%              !is.na(observed))%>%
+%       #mutate(name = ifelse(name=='ldist.pgt','Commercial length distribution','Survey length distribution')) %>%
+%       ggplot(aes(year+(step-1)/4,lower,size=abs(observed-predicted),col=as.factor(sign(observed-predicted)))) +
+%       geom_point() + facet_wrap(~name,ncol=1) +
+%       ylim(c(25,180)) + theme_minimal() +
+%       theme(legend.position = 'none') + xlab('Year') + ylab('Length')
+% @
+%
+%
+% }
+%
+% \frame{
+% \frametitle{Age bubble}
+%
+% <<echo=FALSE,message=FALSE,warning=FALSE,error=FALSE,fig.width=7,fig.height=8,eval=FALSE,dev='tikz',cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   dplyr::filter(grepl('aldist',name),year>2000) %>%
+%   dplyr::mutate(age=as.numeric(gsub('age','',age))) %>%
+%   dplyr::group_by(name,year,age,step,total.catch) %>%
+%   dplyr::summarise(o=sum(observed,na.rm=TRUE),
+%                    p=sum(predicted)) %>%
+%   dplyr::mutate(o=ifelse(o==0,NA,o)) %>%
+%   ggplot(aes(year+(step-1)/4,age,size=abs(o-p)/p,col=as.factor(sign(o-p)))) +
+%   geom_point() + facet_wrap(~name,ncol=1) +
+%   theme_minimal() +
+%   theme(legend.position = 'none') + xlab('Year') + ylab('Length')
+% @
+%
+%
+% }
+%
+%
+%
+%
+%
+% \frame{
+% \frametitle{Fit to data -- lln age distributions}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   dplyr::filter(name=='aldist.lln') %>%
+%   dplyr::mutate(age=as.numeric(gsub('age','',age)),
+%                 length=as.numeric(gsub('len','',length))) %>%
+%   dplyr::group_by(year,age,step,total.catch) %>%
+%   dplyr::summarise(o=sum(observed,na.rm=TRUE),
+%                    p=sum(predicted)) %>%
+%   dplyr::mutate(o=ifelse(o==0,NA,o)) %>%
+%   ggplot(aes(age,o)) + geom_point(col='gray') +
+%   geom_segment(aes(xend=age,yend=0),col='grey') + facet_wrap(~year+step) +
+%   theme_bw() + geom_line(aes(y=p)) +
+%   geom_label(x=5,y=0.4,aes(label=sprintf('%s, q%s',year,step))) +
+%   geom_text(x=12,y=0.15,aes(label=paste0('n = ',total.catch))) +
+%   theme(strip.background = element_blank(),strip.text=element_blank(),
+%         axis.text.y = element_blank()) +
+%   xlab('Length') + ylab('Proportion')
+% @
+%
+% }
+%
+% \frame{
+% \frametitle{Fit to data -- lln growth data}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='aldist.lln') %>%
+%   group_by(year,step,age) %>%
+%   mutate(o=observed/sum(observed,na.rm=TRUE),p=predicted/sum(predicted)) %>%
+%   select(year,step,age,length,observed,o,predicted,p) %>%
+%   ungroup() %>%
+%   mutate(age=as.numeric(gsub('age','',age)),
+%          length=as.numeric(gsub('len','',length))) %>%
+%   group_by(year,step,age) %>%
+%   summarise(o.ml=sum(o*length,na.rm=TRUE),
+%             o.sl=sqrt(sum(o*(length - o.ml)^2,na.rm=TRUE)),
+%             p.ml=sum(p*length),
+%             p.sl=sqrt(sum(p*(length - p.ml)^2))) %>%
+%   mutate(o.ml=ifelse(o.ml==0,NA,o.ml),
+%          o.sl=ifelse(o.sl==0,NA,o.sl),
+%          upper = p.ml+1.96*p.sl,
+%          lower = p.ml-1.96*p.sl,
+%          o.upper = o.ml+1.96*o.sl,
+%          o.lower = o.ml-1.96*o.sl) %>%
+%   ggplot(aes(age,o.ml)) + geom_ribbon(fill='gold',aes(ymax=upper,ymin=lower))+geom_point(size=0.5) +
+%   geom_line(aes(y=p.ml))  + geom_linerange(aes(ymax=o.upper,ymin=o.lower))+
+%   facet_wrap(~year+step) +
+%   theme_bw() + xlab('Age') + ylab('Average length') +
+%   geom_label(x=12,y=30,aes(label=year)) +
+%   theme(strip.background = element_blank(),strip.text=element_blank())
+% @
+%
+%
+% }
+%
+% \frame{
+% \frametitle{Fit to data -- bmt length distributions}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='ldist.bmt') %>%
+%   ggplot(aes(lower,observed)) + geom_point(col='gray') +
+%   geom_segment(aes(xend=lower,yend=0),col='grey') +
+%   facet_wrap(~year+step) + theme_bw() +
+%   geom_line(aes(y=predicted)) + #xlim(c(25,55)) +
+%   geom_label(x=140,y=0.15, size = 2.5,
+%              aes(label=sprintf('%s, q%s',year,step))) +
+%   geom_text(x=140,y=0.07,angle=90,size=2.5,
+%             aes(label=paste0('n = ',round(total.catch)))) +
+%   theme(strip.background = element_blank(),strip.text=element_blank(),
+%         axis.text.y = element_blank()) +
+%   xlab('Length') + ylab('Proportion')
+%
+%
+% @
+%
+% }
+% \frame{
+% \frametitle{Fit to data -- bmt age distributions}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   dplyr::filter(name=='aldist.bmt') %>%
+%   dplyr::mutate(age=as.numeric(gsub('age','',age)),
+%                 length=as.numeric(gsub('len','',length))) %>%
+%   dplyr::group_by(year,age,step,total.catch) %>%
+%   dplyr::summarise(o=sum(observed,na.rm=TRUE),
+%                    p=sum(predicted)) %>%
+%   dplyr::mutate(o=ifelse(o==0,NA,o)) %>%
+%   ggplot(aes(age,o)) + geom_point(col='gray') +
+%   geom_segment(aes(xend=age,yend=0),col='grey') + facet_wrap(~year+step) +
+%   theme_bw() + geom_line(aes(y=p)) +
+%   geom_label(x=5,y=0.4,aes(label=sprintf('%s, q%s',year,step))) +
+%   geom_text(x=12,y=0.15,aes(label=paste0('n = ',total.catch))) +
+%   theme(strip.background = element_blank(),strip.text=element_blank()) +
+%   xlab('Length') + ylab('Proportion')
+% @
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Fit to data -- bmt growth data}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='aldist.bmt') %>%
+%   group_by(year,step,age) %>%
+%   mutate(o=observed/sum(observed,na.rm=TRUE),p=predicted/sum(predicted)) %>%
+%   select(year,step,age,length,observed,o,predicted,p) %>%
+%   ungroup() %>%
+%   mutate(age=as.numeric(gsub('age','',age)),
+%          length=as.numeric(gsub('len','',length))) %>%
+%   group_by(year,step,age) %>%
+%   summarise(o.ml=sum(o*length,na.rm=TRUE),
+%             o.sl=sqrt(sum(o*(length - o.ml)^2,na.rm=TRUE)),
+%             p.ml=sum(p*length),
+%             p.sl=sqrt(sum(p*(length - p.ml)^2))) %>%
+%   mutate(o.ml=ifelse(o.ml==0,NA,o.ml),
+%          o.sl=ifelse(o.sl==0,NA,o.sl),
+%          upper = p.ml+1.96*p.sl,
+%          lower = p.ml-1.96*p.sl,
+%          o.upper = o.ml+1.96*o.sl,
+%          o.lower = o.ml-1.96*o.sl) %>%
+%   ggplot(aes(age,o.ml)) + geom_ribbon(fill='gold',aes(ymax=upper,ymin=lower))+geom_point(size=0.5) +
+%   geom_line(aes(y=p.ml))  + geom_linerange(aes(ymax=o.upper,ymin=o.lower))+
+%   facet_wrap(~year+step) +
+%   theme_bw() + xlab('Age') + ylab('Average length') +
+%   geom_label(x=12,y=30,aes(label=year)) +
+%   theme(strip.background = element_blank(),strip.text=element_blank())
+% @
+%
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Fit to data -- gil length distributions}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='ldist.gil') %>%
+%   ggplot(aes(lower,observed)) + geom_point(col='gray') +
+%   geom_segment(aes(xend=lower,yend=0),col='grey') +
+%   facet_wrap(~year+step) + theme_bw() +
+%   geom_line(aes(y=predicted)) + #xlim(c(25,55)) +
+%   geom_label(x=140,y=0.15, size = 2.5,
+%              aes(label=sprintf('%s, q%s',year,step))) +
+%   geom_text(x=140,y=0.07,angle=90,size=2.5,
+%             aes(label=paste0('n = ',round(total.catch)))) +
+%   theme(strip.background = element_blank(),strip.text=element_blank(),
+%         axis.text.y = element_blank()) +
+%   xlab('Length') + ylab('Proportion')
+%
+%
+% @
+%
+% }
+% \frame{
+% \frametitle{Fit to data -- gil age distributions}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   dplyr::filter(name=='aldist.gil') %>%
+%   dplyr::mutate(age=as.numeric(gsub('age','',age)),
+%                 length=as.numeric(gsub('len','',length))) %>%
+%   dplyr::group_by(year,age,step,total.catch) %>%
+%   dplyr::summarise(o=sum(observed,na.rm=TRUE),
+%                    p=sum(predicted)) %>%
+%   dplyr::mutate(o=ifelse(o==0,NA,o)) %>%
+%   ggplot(aes(age,o)) + geom_point(col='gray') +
+%   geom_segment(aes(xend=age,yend=0),col='grey') + facet_wrap(~year+step) +
+%   theme_bw() + geom_line(aes(y=p)) +
+%   geom_label(x=5,y=0.4,aes(label=sprintf('%s, q%s',year,step))) +
+%   geom_text(x=12,y=0.15,aes(label=paste0('n = ',total.catch))) +
+%   theme(strip.background = element_blank(),strip.text=element_blank()) +
+%   xlab('Length') + ylab('Proportion')
+% @
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Fit to data -- gil growth data}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% fit$catchdist.fleets %>%
+%   filter(name=='aldist.gil') %>%
+%   group_by(year,step,age) %>%
+%   mutate(o=observed/sum(observed,na.rm=TRUE),p=predicted/sum(predicted)) %>%
+%   select(year,step,age,length,observed,o,predicted,p) %>%
+%   ungroup() %>%
+%   mutate(age=as.numeric(gsub('age','',age)),
+%          length=as.numeric(gsub('len','',length))) %>%
+%   group_by(year,step,age) %>%
+%   summarise(o.ml=sum(o*length,na.rm=TRUE),
+%             o.sl=sqrt(sum(o*(length - o.ml)^2,na.rm=TRUE)),
+%             p.ml=sum(p*length),
+%             p.sl=sqrt(sum(p*(length - p.ml)^2))) %>%
+%   mutate(o.ml=ifelse(o.ml==0,NA,o.ml),
+%          o.sl=ifelse(o.sl==0,NA,o.sl),
+%          upper = p.ml+1.96*p.sl,
+%          lower = p.ml-1.96*p.sl,
+%          o.upper = o.ml+1.96*o.sl,
+%          o.lower = o.ml-1.96*o.sl) %>%
+%   ggplot(aes(age,o.ml)) + geom_ribbon(fill='gold',aes(ymax=upper,ymin=lower))+geom_point(size=0.5) +
+%   geom_line(aes(y=p.ml))  + geom_linerange(aes(ymax=o.upper,ymin=o.lower))+
+%   facet_wrap(~year+step) +
+%   theme_bw() + xlab('Age') + ylab('Average length') +
+%   geom_label(x=12,y=30,aes(label=year)) +
+%   theme(strip.background = element_blank(),strip.text=element_blank())
+% @
+%
+%
+% }
+%
+%
+%
+%
+%
+% \frame{
+% \frametitle{Assessment results}
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% bio.plot <-
+%   fit$res.by.year %>%
+%   filter(stock=='lingmat') %>%
+%   select(year,
+%          "SSB"=total.biomass) %>%
+%   tidyr::gather(type,biomass,-year) %>%
+%   ggplot(aes(year,biomass/1e6)) + geom_line() + theme_bw() +
+%   #theme(legend.position=c(0.75,0.8),legend.title=element_blank()) +
+%   ylab('SSB (in \'000 tons)') + xlab('Year') +
+%   expand_limits(y=0)
+%
+% F.plot <-
+%   fit$res.by.year %>%
+%   filter(stock=='lingmat') %>%
+%   #filter(year %in% 1990:2015) %>%
+%   select(year,F,stock) %>%
+%   ggplot(aes(year,F)) + geom_line() + theme_bw() +
+%   ylab('Fishing mortality') + xlab('Year')+
+%   expand_limits(y=0)# + theme(legend.position = c(0.1,0.1))
+%
+%
+% rec.plot <-
+%   fit$res.by.year %>%
+%   ungroup() %>%
+% #  mutate(recruitment=ifelse(year>2011,NA,recruitment),
+% #         lty=ifelse(year>2010,2,1)) %>%
+%   select(year,recruitment) %>%
+%   ggplot(aes(year,recruitment/1e6,group=1)) + geom_bar(stat = 'identity') + theme_bw() +
+%   #geom_point(data=filter(fit$res.by.year,year==2011) %>% mutate(lty=2),col='red')+
+%   annotate('text',x=1985,y=10,label='\\# age 3')+
+%   ylab('Recruitment (in millions)') + xlab('Year') + theme(legend.position='none')+
+%   expand_limits(y=0)
+%
+% catch.plot <-
+%   fit$res.by.year %>%
+%   #filter(year %in% 1990:2015) %>%
+%   ggplot(aes(year,catch/1e6)) + geom_bar(stat='identity') +
+%   xlab('Year') + ylab('Catch (in \'000 tons)') + theme_bw()
+% gridExtra::grid.arrange(bio.plot,F.plot,rec.plot,catch.plot,ncol=2)
+% @
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Other derived quantities}
+%
+% <<echo=FALSE,fig.width=10, fig.height=5,warning=FALSE,message=FALSE,cache=TRUE>>=
+% library(gridExtra)
+% library(Rgadget)
+% fit$suitability <-
+%   fit$suitability %>%
+%   filter(stock=='lingmat',fleet!='foreign')
+%
+% bloss <-
+%   fit$res.by.year %>% filter(stock=='lingmat') %>% ungroup() %>% select(total.biomass) %>% unlist() %>% min()
+% prod.plot <-
+%   fit$res.by.year %>%
+%   filter(year>1989) %>%
+%   mutate(r=(total.biomass - lag(total.biomass) + lag(catch))/lag(total.biomass)) %>%
+%   ggplot(aes(r))+ geom_histogram(fill='gray') + theme_bw() + ylab('') +
+%   xlab('r')
+%
+% gr.plot <-
+%   fit$stock.std %>%
+%   filter(year == 1990) %>%
+%   group_by(age) %>%
+%   dplyr::summarise(mean.length = sum(number*mean.length)/sum(number),
+%                    stddev.length = sum(number*stddev.length)/sum(number)) %>%
+%   ggplot(aes(age,mean.length)) +
+%   geom_ribbon(aes(ymax = mean.length + 1.96*stddev.length,ymin = mean.length - 1.96*stddev.length),
+%               fill = 'gold') +
+%   geom_line() + theme_bw()+
+%   xlab('Age') + ylab('Length')
+%
+% ssb.rec <-
+%   fit$res.by.year %>%
+%   group_by(year) %>%
+%   dplyr::summarise(recruitment=sum(recruitment,na.rm=TRUE),
+%                    ssb = total.biomass[stock=='lingmat']) %>%
+%   #filter(year %in% 1990:2011) %>%
+%   mutate(ssb.5=lag(ssb,3)) %>%
+%   ggplot(aes(ssb.5/1e6,recruitment/1e6,label=year-3)) + geom_text() +
+%   xlab('Spawning stock biomass (in \'000 tons) ') + ylab('Recruitment (in millions)') + theme_bw() +
+%   expand_limits(x=0,y=0) +
+%   geom_vline(xintercept = bloss/1e6)
+%
+% grid.arrange(plot(fit,data='suitability'),
+%              gr.plot,
+%              ssb.rec,
+%              prod.plot,
+%              ncol=2)
+% @
+%
+%
+% }
+%
+%
+% \frame{
+% \frametitle{Forward projections}
+%
+%
+% }
+%
+%
+% \end{document}
