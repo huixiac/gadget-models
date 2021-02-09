@@ -1,0 +1,109 @@
+dirName <- "vendace02"
+
+
+squares <- read.table("../../PROGETTI/MareFRAME_FP7/WP3/MFDB/ICES_RECT.csv", header=T, sep=";")
+squares <- read.table("../PROGETTI/MareFRAME_FP7/WP3/MFDB/ICES_RECT.csv", header=T, sep=";")
+squares <- read.table("../../../PROGETTI/MareFRAME_FP7/WP3/MFDB/ICES_RECT.csv", header=T, sep=";")
+com.catch.ven <- read.table("../SS3_input/data/commercial_catch.dat", sep="\t", header=T)
+seal.cons.ven <- read.table("../SS3_input/data/seal_consumption_vendace.dat", sep="\t", header=T)
+defaults.ven$species
+lw.constants.ven$species
+lw.constants.ven
+class(lw.constants.ven)
+data.frame(lw.constants.ven)
+lw.constants.ven[1:4,]
+tmp <- mfdb_dplyr_sample(mdb) %>% 
+       filter(species == defaults.ven$species,
+              data_source == 'individual_comm_vendace',
+              !is.na(weight)) %>%
+       data.frame()
+ggplot(tmp,
+       aes(length,weight/1000)) +
+   geom_point() +
+   geom_line(data=data.frame(x=tmp$length,
+                             y=lw.constants.ven$a*tmp$length^lw.constants.ven$b),
+             aes(x,y), color=2, lwd=0.6) +
+   facet_wrap(~year)
+
+tmp <- mfdb_dplyr_sample(mdb) %>% data-.frame() %>% 
+       filter(species == defaults.ven$species,
+              data_source == 'individual_comm_vendace',
+              !is.na(weight)) %>%
+       data.frame()
+ggplot(tmp,
+       aes(length,weight/1000)) +
+   geom_point() +
+   geom_line(data=data.frame(x=tmp$length,
+                             y=lw.constants.ven$a*tmp$length^lw.constants.ven$b),
+             aes(x,y), color=2, lwd=0.6) +
+   facet_wrap(~year)
+
+tmp <- mfdb_dplyr_sample(mdb) %>% data.frame() %>% 
+       filter(species == defaults.ven$species,
+              data_source == 'individual_comm_vendace',
+              !is.na(weight)) %>%
+       data.frame()
+ggplot(tmp,
+       aes(length,weight/1000)) +
+   geom_point() +
+   geom_line(data=data.frame(x=tmp$length,
+                             y=lw.constants.ven$a*tmp$length^lw.constants.ven$b),
+             aes(x,y), color=2, lwd=0.6) +
+   facet_wrap(~year)
+
+tmp <- mfdb_dplyr_sample(mdb) %>% data.frame() %>% 
+       filter(species == defaults.ven$species,
+              data_source == 'individual_comm_vendace',
+              !is.na(weight)) %>%
+       data.frame()
+ggplot(tmp,
+       aes(length,weight/1000)) +
+   geom_point() +
+   geom_line(data=data.frame(x=tmp$length,
+                             y=lw.constants.ven$a*tmp$length^lw.constants.ven$b),
+             aes(x,y), color=2, lwd=0.6) +
+   facet_wrap(~year)
+
+tmp <-   mfdb_dplyr_sample(mdb) %>%  data.frame() %>%
+  filter(species == defaults.ven$species,
+         data_source == 'individual_comm_vendace',
+         year %in% c(1998,2006:2008,2010:2017), # temporary until data get fixed***
+         !is.na(maturity_stage)) %>% 
+  select(length,maturity_stage) %>% 
+  group_by(length,maturity_stage) %>% 
+  dplyr::summarise(n=n()) %>% 
+  data.frame() %>%
+  complete(maturity_stage,length, fill=list(n=0)) %>%
+  group_by(length) %>% 
+  dplyr::mutate(p=n/sum(n, na.rm=T)) %>% 
+  filter(maturity_stage=='5') %>%
+  data.frame()
+ggplot(tmp,
+       aes(length,p)) +
+   geom_point() +
+   geom_line(data=data.frame(x=tmp$length,
+                             y=1/(1+exp(-mat.constants.ven$a*(tmp$length-mat.constants.ven$l50)))),
+             aes(x,y), color=2, lwd=0.6)
+
+tmp <-   mfdb_dplyr_sample(mdb) %>%  data.frame() %>%
+  filter(species == defaults.ven$species,
+         data_source == 'individual_comm_vendace',
+         year %in% c(1998,2006:2008,2010:2017), # temporary until data get fixed***
+         !is.na(maturity_stage)) %>% 
+  select(length,maturity_stage) %>% 
+  group_by(length,maturity_stage) %>% 
+  dplyr::summarise(n=n()) %>% 
+  data.frame() %>%
+  complete(maturity_stage,length, fill=list(n=0)) %>%
+  group_by(length) %>% 
+  dplyr::mutate(p=n/sum(n, na.rm=T)) %>% 
+  filter(maturity_stage=='5') %>%
+  data.frame()
+ggplot(tmp,
+       aes(length,p)) +
+   geom_point() +
+   geom_line(data=data.frame(x=tmp$length,
+                             y=1/(1+exp(-mat.constants.ven$a*(tmp$length-mat.constants.ven$l50)))),
+             aes(x,y), color=2, lwd=0.6)
+
+n
