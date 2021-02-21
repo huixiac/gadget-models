@@ -1,0 +1,92 @@
+## likelihood actions
+
+nll_breakdown <- FALSE  # Turn to TRUE to get per-step nll
+
+ven_likelihood_actions <- list(
+  g3l_understocking(list(ven_imm, ven_mat), nll_breakdown = nll_breakdown),
+
+  g3l_catchdistribution(
+    'ldist.ven.com',
+    weight = 1,
+    ldist.ven.com,
+    fleets = list(comven1, comven2),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_sumofsquares(),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+  g3l_catchdistribution(
+    'alk.ven.com',
+    weight = 1,
+    alk.ven.com,
+    fleets = list(comven1, comven2),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_sumofsquares(),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+  g3l_catchdistribution(
+    'adist.ven.seal',
+    weight = 1,
+    adist.ven.seal,
+    fleets = list(sealven),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_sumofsquares(),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+  g3l_catchdistribution(
+    'ldist.ven.aco',
+    weight = 1,
+    ldist.ven.aco,
+    fleets = list(acoven),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_sumofsquares(),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+  g3l_catchdistribution(
+    'alk.ven.aco',
+    weight = 1,
+    alk.ven.aco,
+    fleets = list(acoven),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_sumofsquares(),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+  g3l_distribution(
+    'si.ven.cpue',
+    weight = 1,
+    si.ven.cpue,
+    fleets = list(comven1, comven2),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_surveyindices_log(alpha = ~g3_param('ven_si_alpha1'),
+                                            beta = 1),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+  g3l_distribution(
+    'si.ven.aco',
+    weight = 1,
+    si.ven.aco,
+    fleets = list(acoven),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_surveyindices_log(alpha = ~g3_param('ven_si_alpha2'),
+                                            beta = 1),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+   g3l_catchdistribution(
+    'mat.ven.com',
+    weight = 1,
+    mat.ven.com %>% rename(stock=maturity_stage),
+    fleets = list(comven1, comven2),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_sumofsquares(),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+   g3l_catchdistribution(
+    'mat.ven.aco',
+    weight = 1,
+    mat.ven.aco %>% rename(stock=maturity_stage),
+    fleets = list(acoven),
+    stocks = list(ven_imm, ven_mat),
+    g3l_distribution_sumofsquares(),
+    nll_breakdown = nll_breakdown,
+    missing = 0),
+   list()
+)
