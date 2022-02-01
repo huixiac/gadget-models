@@ -4,23 +4,60 @@
 ##
 ## -----------------------------------------------------------------------------
 
-g3_iterative <- function(r_model, 
+g3_iterative <- function(out.dir,
+                         r_model, 
                          tmb_model, 
                          params, 
-                         grouping = list(), 
-                         jitter = FALSE){
+                         grouping = list()){
   
-  ## If jittering the parameters 
-  ## First round of re-weighting
-  stage1 <- 
+  if (!dir.exists(out.dir)) dir.create(out.dir, recursive = TRUE)
+  
+  ## Setup initial parameters
+  init_params <- 
     g3_lik_out(r_model, params) %>% 
-    g3_iterative_setup(grouping = grouping) %>% 
-    parallel::mclapply(function(x){ g3_iterative_run(x, tmb_model) }, mc.cores = parallel::detectCores())
+    g3_iterative_setup(grouping = grouping) 
   
+  save(init_params, file = file.path(out.dir, 'initial_params.Rdata'))
+  
+  ## Run the first stage of re-weighting
+  stage1_params <- 
+    parallel::mclapply(init_params, 
+                       function(x){ g3_iterative_run(x, tmb_model) }, 
+                       mc.cores = parallel::detectCores())
+  
+  save(stage1_params, file = file.path(out.dir, 'stage1_params.Rdata'))
+  
+  ## Update weights for second round of re-weighting
+  int_params <- 
+    parallel::mclapply(stage1_params, 
+                       function(x){ g3_lik_out(r_model, x) }, 
+                       mc.cores = parallel::detectCores()) %>% 
+    g3_iterative_final()
+  
+  ## Second round
+  stage2_params <- 
+    parallel::mclapply(int_params, 
+                       function(x){ g3_iterative_run(x, tmb_model) }, 
+                       mc.cores = parallel::detectCores())
+  
+  save(stage2_params, file = file.path(out.dir, 'stage2_params.Rdata'))
+  
+  final_lik <- 
+    parallel::mclapply(stage2_params, 
+                       function(x){ g3_lik_out(r_model, x) }, 
+                       mc.cores = parallel::detectCores()) 
+  final_score <- 
+    final_lik %>% 
+    bind_rows(.id = 'group') %>% 
+    group_by(group) %>% 
+    summarise(s = sum(value*weight))
     
+  final_params <- 
+    stage2_params[[final_score[which.min(final_score$s), 'group'][[1]]]]
   
+  save(final_params, file = file.path(out.dir, 'final_params.Rdata'))
   
-  
+  return(final_params)
 }
 
 
@@ -138,7 +175,7 @@ g3_iterative_run <- function(param, tmb_model){
   
 }
 
-g3_iterative_final <- function(lik_out_list, jitter_params = FALSE){
+g3_iterative_final <- function(lik_out_list){
   weights <- 
     lik_out_list %>% 
     dplyr::bind_rows(.id = 'group') %>% 
@@ -157,6 +194,5 @@ g3_iterative_final <- function(lik_out_list, jitter_params = FALSE){
         weights$weight
       x
     })
-  if (jitter_params) params <- lapply(params, FUN = g3_jitter, jitter_fraction = 0.2)
   return(params)
 }
